@@ -9,50 +9,42 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background-color: #0b0e11; color: #f0f0f0; font-family: 'Inter', sans-serif; }
-        .card-bg { background-color: #151921; border: 1px solid #1e2329; }
-        .input-dark { background-color: #1a1f26; border: 1px solid #2d333b; color: white; padding: 12px; width: 100%; border-radius: 8px; }
-        .btn-enviar { background-color: #008f44; color: white; font-weight: bold; padding: 12px; width: 100%; border-radius: 8px; transition: 0.2s; }
-        .btn-enviar:hover { background-color: #00a34d; }
-        .autocomplete-results { position: absolute; top: 100%; left: 0; right: 0; background-color: #1a1f26; border: 1px solid #2d333b; border-radius: 8px; z-index: 50; max-height: 200px; overflow-y: auto; }
+        .card-bg { background-color: #151921; border: 1px solid #1e2329; border-radius: 12px; }
+        .input-dark { background-color: #1a1f26; border: 1px solid #2d333b; color: white; padding: 12px; width: 100%; border-radius: 8px; outline: none; }
+        .btn-enviar { background-color: #008f44; color: white; font-weight: bold; padding: 14px; width: 100%; border-radius: 8px; transition: 0.2s; }
+        .btn-enviar:hover { background-color: #00a34d; transform: translateY(-2px); }
+        .autocomplete-results { position: absolute; top: 100%; left: 0; right: 0; background-color: #1a1f26; border: 1px solid #2d333b; border-radius: 8px; z-index: 100; max-height: 250px; overflow-y: auto; }
         .hidden { display: none !important; }
     </style>
 </head>
-<body class="p-6">
+<body class="p-8">
 
-    <div id="tela-negado" class="flex items-center justify-center h-screen hidden">
-        <div class="text-center">
-            <i class="fa-solid fa-lock text-6xl text-red-600 mb-4"></i>
-            <h1 class="text-3xl font-bold text-red-500 italic uppercase">Acesso Restrito - Área Militar</h1>
-            <p class="text-zinc-500 mt-2">Seu ID não possui permissões administrativas.</p>
-        </div>
-    </div>
-
-    <div id="tela-adm" class="max-w-4xl mx-auto hidden">
-        <h1 class="text-3xl font-bold mb-10 italic flex items-center gap-4"><i class="fa-solid fa-user-shield text-emerald-500"></i> Administração</h1>
+    <div id="tela-adm" class="max-w-xl mx-auto mt-10">
+        <h1 class="text-3xl font-black italic uppercase mb-10 flex items-center gap-4 text-white">
+            <i class="fa-solid fa-user-shield text-emerald-500"></i> Enviar Dinheiro
+        </h1>
         
-        <div class="grid md:grid-cols-2 gap-8">
-            <div class="card-bg p-8 rounded-xl relative">
-                <h3 class="mb-6 font-bold uppercase italic text-zinc-400">Transferir Prata</h3>
-                <div class="space-y-4">
-                    <div class="relative">
-                        <label class="text-xs text-zinc-500 block mb-1">Destinatário</label>
-                        <input type="text" id="destinatario-input" class="input-dark" placeholder="Nome do Jogador...">
-                        <input type="hidden" id="destinatario-id-oculto">
-                        <div id="lista-autocomplete" class="autocomplete-results hidden shadow-2xl"></div>
-                    </div>
-                    <div>
-                        <label class="text-xs text-zinc-500 block mb-1">Quantia (Prata)</label>
-                        <input type="number" id="quantia-input" class="input-dark" placeholder="0">
-                    </div>
-                    <button onclick="confirmarEnvio()" class="btn-enviar uppercase tracking-tighter italic">Confirmar Envio</button>
+        <div class="card-bg p-8 shadow-2xl border-t-4 border-emerald-600">
+            <div class="space-y-6">
+                <div class="relative">
+                    <label class="text-[10px] uppercase font-black text-zinc-500 mb-2 block tracking-widest">Pesquisar Jogador (Discord)</label>
+                    <input type="text" id="busca-input" class="input-dark font-bold" placeholder="Digite o nome...">
+                    <input type="hidden" id="id-selecionado">
+                    
+                    <div id="lista-busca" class="autocomplete-results hidden shadow-2xl"></div>
                 </div>
-            </div>
 
-            <div class="card-bg p-8 rounded-xl">
-                <h3 class="mb-6 font-bold uppercase italic text-zinc-400">Admins Ativos</h3>
-                <div id="lista-admins" class="space-y-2"></div>
+                <div>
+                    <label class="text-[10px] uppercase font-black text-zinc-500 mb-2 block tracking-widest">Quantia em Prata</label>
+                    <input type="number" id="valor-input" class="input-dark font-mono text-xl text-emerald-500" placeholder="0">
+                </div>
+
+                <button onclick="processarPagamento()" class="btn-enviar uppercase italic tracking-tighter text-lg">
+                    Confirmar Envio
+                </button>
             </div>
         </div>
+        <p class="text-center text-zinc-600 text-[10px] mt-6 uppercase font-bold tracking-widest">Nebula Management System</p>
     </div>
 
     <script>
@@ -60,75 +52,72 @@
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yemx3cmx1ZmdxYnNhcHNpZGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDc5MzMsImV4cCI6MjA5MDYyMzkzM30.6vH3KfWU1XJqRrCi6e___LNt-t1nZzQpfe6EumzvkmI';
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-        async function verificarAcesso() {
-            const token = localStorage.getItem('discord_token');
-            if (!token) return window.location.href = 'index.html';
+        // FUNÇÃO DE BUSCA EM TEMPO REAL
+        document.getElementById('busca-input').addEventListener('input', async (e) => {
+            const termo = e.target.value.trim();
+            const lista = document.getElementById('lista-busca');
 
-            const res = await fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${token}` } });
-            const user = await res.json();
-
-            const { data: isAdm } = await supabaseClient.from('admins').select('*').eq('id_discord', user.id).single();
-            if (isAdm) {
-                document.getElementById('tela-adm').classList.remove('hidden');
-                configurarAutocomplete();
-                carregarListaAdmins();
-            } else {
-                document.getElementById('tela-negado').classList.remove('hidden');
+            if (termo.length < 2) {
+                lista.classList.add('hidden');
+                return;
             }
+
+            const { data: usuarios } = await supabaseClient
+                .from('usuarios')
+                .select('username, id_discord, avatar_url')
+                .ilike('username', `%${termo}%`)
+                .limit(5);
+
+            if (usuarios && usuarios.length > 0) {
+                lista.innerHTML = usuarios.map(u => `
+                    <div onclick="selecionar('${u.username}', '${u.id_discord}')" class="p-4 hover:bg-[#242933] cursor-pointer flex items-center gap-4 border-b border-[#1e2329]">
+                        <img src="${u.avatar_url}" class="w-10 h-10 rounded-full border border-zinc-700">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-white uppercase italic text-sm">${u.username}</span>
+                            <small class="text-zinc-500 font-mono text-[9px]">${u.id_discord}</small>
+                        </div>
+                    </div>
+                `).join('');
+                lista.classList.remove('hidden');
+            } else {
+                lista.classList.add('hidden');
+            }
+        });
+
+        function selecionar(nome, id) {
+            document.getElementById('busca-input').value = nome.toUpperCase();
+            document.getElementById('id-selecionado').value = id;
+            document.getElementById('lista-busca').classList.add('hidden');
         }
 
-        function configurarAutocomplete() {
-            const input = document.getElementById('destinatario-input');
-            const lista = document.getElementById('lista-autocomplete');
+        async function processarPagamento() {
+            const idDestino = document.getElementById('id-selecionado').value;
+            const valor = parseInt(document.getElementById('valor-input').value);
 
-            input.addEventListener('input', async () => {
-                const termo = input.value.trim();
-                if (termo.length < 2) return lista.classList.add('hidden');
+            if (!idDestino || isNaN(valor) || valor <= 0) {
+                alert("Selecione um jogador e insira um valor válido!");
+                return;
+            }
 
-                const { data: usuarios } = await supabaseClient.from('usuarios').select('username, id_discord, avatar_url').ilike('username', `%${termo}%`).limit(5);
-
-                if (usuarios?.length > 0) {
-                    lista.innerHTML = usuarios.map(u => `
-                        <div class="p-3 hover:bg-[#242933] cursor-pointer flex items-center gap-3 border-b border-[#1e2329]" 
-                             onclick="selecionarUsuario('${u.username}', '${u.id_discord}')">
-                            <img src="${u.avatar_url}" class="w-8 h-8 rounded-full border border-zinc-700">
-                            <div class="flex flex-col">
-                                <span class="font-bold text-white text-sm uppercase italic">${u.username}</span>
-                                <small class="text-zinc-500 text-[10px]">${u.id_discord}</small>
-                            </div>
-                        </div>`).join('');
-                    lista.classList.remove('hidden');
-                }
-            });
-        }
-
-        function selecionarUsuario(nome, id) {
-            document.getElementById('destinatario-input').value = nome;
-            document.getElementById('destinatario-id-oculto').value = id;
-            document.getElementById('lista-autocomplete').classList.add('hidden');
-        }
-
-        async function confirmarEnvio() {
-            const idRec = document.getElementById('destinatario-id-oculto').value;
-            const valor = parseInt(document.getElementById('quantia-input').value);
-            if (!idRec || !valor) return alert('Selecione um jogador e um valor!');
-
-            const { data: user } = await supabaseClient.from('usuarios').select('saldo').eq('id_discord', idRec).single();
+            // BUSCA SALDO ATUAL
+            const { data: user } = await supabaseClient.from('usuarios').select('saldo').eq('id_discord', idDestino).single();
             const novoSaldo = (user?.saldo || 0) + valor;
 
-            await supabaseClient.from('usuarios').update({ saldo: novoSaldo }).eq('id_discord', idRec);
-            await supabaseClient.from('historico').insert([{ usuario_id: idRec, tipo: 'entrada', descricao: 'Envio ADM', valor_total: valor, data: new Date() }]);
-            
-            alert('Transferência concluída com sucesso!');
+            // ATUALIZA SALDO
+            await supabaseClient.from('usuarios').update({ saldo: novoSaldo }).eq('id_discord', idDestino);
+
+            // REGISTRA NO HISTÓRICO
+            await supabaseClient.from('historico').insert([{ 
+                usuario_id: idDestino, 
+                tipo: 'entrada', 
+                descricao: 'ENVIO ADMINISTRATIVO', 
+                valor_total: valor, 
+                data: new Date() 
+            }]);
+
+            alert(`✅ Sucesso! R$ ${valor} enviados para o jogador.`);
             location.reload();
         }
-
-        async function carregarListaAdmins() {
-            const { data } = await supabaseClient.from('admins').select('id_discord');
-            document.getElementById('lista-admins').innerHTML = data.map(a => `<div class="p-3 bg-[#1a1f26] rounded-lg text-sm border border-zinc-800 text-zinc-400 font-mono">${a.id_discord}</div>`).join('');
-        }
-
-        window.onload = verificarAcesso;
     </script>
 </body>
 </html>
