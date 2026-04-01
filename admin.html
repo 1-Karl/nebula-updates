@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nebula | Administração</title>
+    <title>Nebula | ADM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -18,27 +18,30 @@
 </head>
 <body class="p-8">
     <div class="max-w-xl mx-auto mt-10">
-        <h1 class="text-2xl font-black italic uppercase mb-8 flex items-center gap-3">
-            <i class="fa-solid fa-money-bill-transfer text-emerald-500"></i> Administração de Saldo
+        <h1 class="text-3xl font-black italic uppercase mb-8 flex items-center gap-3 text-white">
+            <i class="fa-solid fa-money-bill-transfer text-emerald-500"></i> Gestão de Prata
         </h1>
 
-        <div class="card-bg p-8 shadow-2xl">
+        <div class="card-bg p-8 shadow-2xl border-t-4 border-emerald-600">
             <div class="space-y-6">
                 <div class="relative">
-                    <label class="text-[10px] uppercase font-black text-zinc-500 mb-2 block tracking-widest">Pesquisar Jogador (Nome do Discord)</label>
-                    <input type="text" id="busca-input" class="input-dark font-bold" placeholder="Digite para buscar..." autocomplete="off">
+                    <label class="text-[10px] uppercase font-black text-zinc-500 mb-2 block tracking-widest">Localizar Jogador</label>
+                    <input type="text" id="busca-input" class="input-dark font-bold" placeholder="Nome ou ID do Discord..." autocomplete="off">
                     <input type="hidden" id="id-selecionado">
-                    <div id="lista-busca" class="autocomplete-results hidden"></div>
+                    <div id="lista-busca" class="autocomplete-results hidden shadow-2xl"></div>
                 </div>
 
                 <div>
-                    <label class="text-[10px] uppercase font-black text-zinc-500 mb-2 block tracking-widest">Valor da Prata</label>
+                    <label class="text-[10px] uppercase font-black text-zinc-500 mb-2 block tracking-widest">Valor para Enviar</label>
                     <input type="number" id="valor-input" class="input-dark font-mono text-xl text-emerald-500" placeholder="0">
                 </div>
 
-                <button onclick="confirmarEnvio()" class="btn-enviar uppercase italic tracking-tighter">Confirmar Transferência</button>
+                <button onclick="confirmarEnvio()" class="btn-enviar uppercase italic tracking-tighter text-lg hover:bg-emerald-500 transition">
+                    Confirmar Envio
+                </button>
             </div>
         </div>
+        <a href="index.html" class="block text-center mt-6 text-zinc-600 text-xs hover:text-zinc-400 font-bold uppercase tracking-widest">← Voltar ao Início</a>
     </div>
 
     <script>
@@ -46,15 +49,16 @@
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yemx3cmx1ZmdxYnNhcHNpZGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDc5MzMsImV4cCI6MjA5MDYyMzkzM30.6vH3KfWU1XJqRrCi6e___LNt-t1nZzQpfe6EumzvkmI';
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-        // BUSCA EM TEMPO REAL USANDO A FUNÇÃO RPC
         document.getElementById('busca-input').addEventListener('input', async (e) => {
             const termo = e.target.value.trim();
             const lista = document.getElementById('lista-busca');
 
             if (termo.length < 2) return lista.classList.add('hidden');
 
-            // CHAMA A FUNÇÃO SQL QUE CRIAMOS
-            const { data: usuarios, error } = await supabaseClient.rpc('buscar_usuarios_v2', { termo_busca: termo });
+            const { data: usuarios } = await supabaseClient.from('usuarios')
+                .select('username, id_discord, avatar_url')
+                .or(`username.ilike.%${termo}%,id_discord.eq.${termo}`)
+                .limit(5);
 
             if (usuarios && usuarios.length > 0) {
                 lista.innerHTML = usuarios.map(u => `
@@ -66,9 +70,7 @@
                         </div>
                     </div>`).join('');
                 lista.classList.remove('hidden');
-            } else {
-                lista.classList.add('hidden');
-            }
+            } else { lista.classList.add('hidden'); }
         });
 
         function selecionar(nome, id) {
@@ -81,23 +83,18 @@
             const idDestino = document.getElementById('id-selecionado').value;
             const valor = parseInt(document.getElementById('valor-input').value);
 
-            if (!idDestino || isNaN(valor) || valor <= 0) return alert("Selecione um jogador e um valor!");
+            if (!idDestino || isNaN(valor) || valor <= 0) return alert("Selecione um jogador válido!");
 
-            // BUSCA SALDO ATUAL E ATUALIZA
             const { data: user } = await supabaseClient.from('usuarios').select('saldo').eq('id_discord', idDestino).single();
             const novoSaldo = (user?.saldo || 0) + valor;
 
-            const { error: updError } = await supabaseClient.from('usuarios').update({ saldo: novoSaldo }).eq('id_discord', idDestino);
-            
-            if (!updError) {
-                await supabaseClient.from('historico').insert([{ 
-                    usuario_id: idDestino, tipo: 'entrada', descricao: 'TRANSFERÊNCIA ADM', valor_total: valor, data: new Date() 
-                }]);
-                alert("✅ Sucesso! Saldo atualizado.");
-                location.reload();
-            } else {
-                alert("Erro ao atualizar banco. Verifique o SQL e as políticas RLS.");
-            }
+            await supabaseClient.from('usuarios').update({ saldo: novoSaldo }).eq('id_discord', idDestino);
+            await supabaseClient.from('historico').insert([{ 
+                usuario_id: idDestino, tipo: 'entrada', descricao: 'ENVIO ADMINISTRATIVO', valor_total: valor, data: new Date() 
+            }]);
+
+            alert("✅ Transferência realizada!");
+            location.reload();
         }
     </script>
 </body>
