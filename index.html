@@ -2,62 +2,36 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nebula | Sistema de Economia</title>
+    <title>Nebula Economy</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background-color: #0b0e11; color: #f0f0f0; font-family: 'Inter', sans-serif; }
         .card-bg { background-color: #151921; border: 1px solid #1e2329; border-radius: 12px; }
-        .banner-gradient { background: linear-gradient(90deg, #0f172a 0%, #1e3a8a 50%, #000 100%); height: 200px; border-bottom: 1px solid #1e2329; }
-        .avatar-frame { width: 140px; height: 140px; border: 4px solid #0b0e11; position: absolute; bottom: -70px; left: 40px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        .badge-status { background: #1e2329; border: 1px solid #2d333b; color: #5865F2; padding: 2px 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; border-radius: 4px; }
-        .badge-guilda { background: #053b24; color: #10b981; font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+        .banner { background: linear-gradient(90deg, #0f172a 0%, #1e3a8a 50%, #000 100%); height: 180px; border-bottom: 1px solid #1e2329; }
+        .avatar { width: 130px; height: 130px; border: 4px solid #0b0e11; position: absolute; bottom: -65px; left: 30px; border-radius: 50%; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
-
-    <div id="login-screen" class="flex items-center justify-center h-screen hidden">
-        <div class="card-bg p-10 text-center border-t-4 border-[#5865F2] shadow-2xl">
-            <h1 class="text-3xl font-black italic mb-8">NEBULA ECONOMY</h1>
-            <button onclick="login()" class="bg-[#5865F2] px-10 py-4 rounded-lg font-black flex items-center gap-3 hover:opacity-90">
-                <i class="fa-brands fa-discord"></i> VINCULAR DISCORD
-            </button>
-        </div>
+    <div id="login" class="flex h-screen items-center justify-center hidden">
+        <button onclick="loginDiscord()" class="bg-[#5865F2] px-8 py-4 rounded font-bold uppercase">Conectar Discord</button>
     </div>
 
-    <div id="app-screen" class="hidden">
-        <div class="banner-gradient relative">
-            <div class="max-w-6xl mx-auto h-full relative">
-                <img id="u-avatar" src="" class="avatar-frame rounded-full bg-[#151921]">
-                <div id="admin-area" class="absolute -bottom-10 right-8 hidden">
-                    <a href="admin.html" class="bg-[#1a1f26] border border-[#2d333b] text-zinc-400 px-5 py-2 rounded-lg font-black text-xs hover:text-white flex items-center gap-2 transition">
-                        <i class="fa-solid fa-user-shield text-emerald-500"></i> PAINEL ADM
-                    </a>
-                </div>
-            </div>
+    <div id="painel" class="hidden">
+        <div class="banner relative">
+            <img id="u-pic" src="" class="avatar bg-[#151921]">
+            <a id="adm-btn" href="admin.html" class="absolute bottom-4 right-4 bg-zinc-800 px-4 py-2 rounded text-xs font-bold hidden">PAINEL ADM</a>
         </div>
-
-        <div class="max-w-6xl mx-auto mt-24 px-10">
-            <div class="mb-10">
-                <div class="flex items-center gap-3">
-                    <h1 id="u-name" class="text-4xl font-black italic uppercase text-white tracking-tighter">CARREGANDO...</h1>
-                    <span class="badge-status">Membro</span>
+        <div class="max-w-6xl mx-auto mt-20 px-8">
+            <h1 id="u-name" class="text-4xl font-black italic uppercase">NOME...</h1>
+            <div class="card-bg p-8 mt-10">
+                <div class="flex justify-between items-end border-b border-zinc-800 pb-6 mb-6">
+                    <span class="text-zinc-500 font-bold uppercase text-xs italic">Saldo Disponível</span>
+                    <h2 id="u-saldo" class="text-5xl font-black italic text-white">R$ 0</h2>
                 </div>
-                <span class="badge-guilda italic inline-block mt-2">Membro da Guilda</span>
-            </div>
-
-            <div class="card-bg p-8">
-                <div class="flex justify-between items-center border-b border-zinc-800 pb-6 mb-6">
-                    <h3 class="text-zinc-500 font-black uppercase text-[11px] italic tracking-widest">Extrato de Pratas</h3>
-                    <div class="text-right">
-                        <span class="text-[10px] font-black text-zinc-500 uppercase">Patrimônio</span>
-                        <h2 id="u-saldo" class="text-5xl font-black italic text-white">R$ 0</h2>
-                    </div>
-                </div>
-                <table class="w-full">
+                <table class="w-full text-left">
                     <tbody id="u-logs"></tbody>
                 </table>
             </div>
@@ -67,50 +41,48 @@
     <script>
         const SB_URL = 'https://mrzlwrlufgqbsapsidjy.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yemx3cmx1ZmdxYnNhcHNpZGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDc5MzMsImV4cCI6MjA5MDYyMzkzM30.6vH3KfWU1XJqRrCi6e___LNt-t1nZzQpfe6EumzvkmI';
-        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
-        function login() {
-            const REDIRECT = 'https://1-karl.github.io/nebula-updates/index.html';
-            window.location.href = `https://discord.com/api/oauth2/authorize?client_id=1255697837971214476&redirect_uri=${encodeURIComponent(REDIRECT)}&response_type=token&scope=identify`;
+        function loginDiscord() {
+            const uri = "https://1-karl.github.io/nebula-updates/index.html";
+            window.location.href = `https://discord.com/api/oauth2/authorize?client_id=1255697837971214476&redirect_uri=${encodeURIComponent(uri)}&response_type=token&scope=identify`;
         }
 
-        async function init() {
-            let token = localStorage.getItem('access_token');
+        async function carregar() {
+            let tk = localStorage.getItem('tk');
             if(window.location.hash) {
-                token = new URLSearchParams(window.location.hash.replace('#','?')).get('access_token');
-                localStorage.setItem('access_token', token);
-                window.history.replaceState({}, "", window.location.pathname);
+                tk = new URLSearchParams(window.location.hash.replace('#','?')).get('access_token');
+                localStorage.setItem('tk', tk);
+                window.history.replaceState({}, "", "/index.html");
             }
-            if(!token) return document.getElementById('login-screen').classList.remove('hidden');
+            if(!tk) return document.getElementById('login').classList.remove('hidden');
 
-            const res = await fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${token}` } });
-            const user = await res.json();
+            const r = await fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${tk}` } });
+            const user = await r.json();
 
             if(user.id) {
-                const pic = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
-                const { data: db } = await supabaseClient.from('usuarios').upsert({ id_discord: user.id, username: user.username, avatar_url: pic }).select().single();
+                const img = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+                const { data: dbUser } = await supabase.from('usuarios').upsert({ id_discord: user.id, username: user.username, avatar_url: img }).select().single();
                 
-                document.getElementById('app-screen').classList.remove('hidden');
-                document.getElementById('u-name').innerText = user.username;
-                document.getElementById('u-avatar').src = pic;
-                document.getElementById('u-saldo').innerText = `R$ ${db.saldo.toLocaleString('pt-BR')}`;
+                document.getElementById('painel').classList.remove('hidden');
+                document.getElementById('u-name').innerText = user.username.toUpperCase();
+                document.getElementById('u-pic').src = img;
+                document.getElementById('u-saldo').innerText = `R$ ${dbUser.saldo.toLocaleString('pt-BR')}`;
 
-                // VERIFICAÇÃO ADM MELHORADA
-                const { data: isAdm } = await supabaseClient.from('admins').select('*').eq('id_discord', user.id).maybeSingle();
-                if(isAdm) document.getElementById('admin-area').classList.remove('hidden');
+                const { data: isAdm } = await supabase.from('admins').select('*').eq('id_discord', user.id).maybeSingle();
+                if(isAdm) document.getElementById('adm-btn').classList.remove('hidden');
 
-                const { data: logs } = await supabaseClient.from('historico').select('*').eq('usuario_id', user.id).order('data', {ascending: false});
+                const { data: logs } = await supabase.from('historico').select('*').eq('usuario_id', user.id).order('data', {ascending: false});
                 document.getElementById('u-logs').innerHTML = logs.map(l => `
-                    <tr class="border-b border-zinc-900/50">
-                        <td class="py-4 text-zinc-500 font-bold italic text-[10px]">${new Date(l.data).toLocaleDateString()}</td>
-                        <td class="py-4"><span class="badge-guilda px-2 py-1 rounded">↗ Entrada</span></td>
-                        <td class="py-4 text-center text-zinc-400 font-black italic uppercase text-xs">${l.descricao}</td>
-                        <td class="py-4 text-right text-emerald-500 font-black italic text-lg">R$ ${l.valor_total.toLocaleString('pt-BR')}</td>
+                    <tr class="border-b border-zinc-900">
+                        <td class="py-4 text-zinc-500 italic text-[10px] uppercase font-bold">${new Date(l.data).toLocaleDateString()}</td>
+                        <td class="py-4 text-emerald-500 font-black italic">R$ ${l.valor.toLocaleString('pt-BR')}</td>
+                        <td class="py-4 text-right text-zinc-400 font-bold uppercase text-[10px] italic">${l.descricao}</td>
                     </tr>
                 `).join('');
             }
         }
-        init();
+        carregar();
     </script>
 </body>
 </html>
