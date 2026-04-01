@@ -3,51 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nebula | Início</title>
+    <title>Nebula | Sistema de Economia</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #0b0e11; color: #f0f0f0; font-family: 'Inter', sans-serif; }
-        .card-bg { background-color: #151921; border: 1px solid #1e2329; border-radius: 12px; }
-        .btn-discord { background-color: #5865F2; transition: 0.3s; font-weight: bold; }
-        .banner-perfil { background: linear-gradient(to bottom, #1e3a8a, #0b0e11); height: 180px; border-bottom: 1px solid #1e2329; }
+        body { background-color: #0b0e11; color: #f0f0f0; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .card-bg { background-color: #151921; border: 1px solid #1e2329; }
+        .btn-discord { background-color: #5865F2; transition: 0.3s; }
         .hidden { display: none !important; }
+        .banner-guilda { background: linear-gradient(to right, #0f172a, #1e3a8a, #000); border-bottom: 1px solid #1e2329; height: 200px; }
+        .badge-player { background-color: #1e2329; color: #7289da; border: 1px solid #2d333b; }
+        .badge-entrada { background-color: #053b24; color: #10b981; }
     </style>
 </head>
 <body>
+
     <div id="tela-login" class="flex items-center justify-center h-screen hidden">
-        <div class="card-bg p-10 text-center shadow-2xl max-w-sm border-t-4 border-[#5865F2]">
+        <div class="card-bg p-10 rounded-2xl text-center shadow-2xl max-w-sm border-t-4 border-[#5865F2]">
             <h1 class="text-2xl font-black italic mb-6">NEBULA ECONOMY</h1>
-            <button onclick="fazerLogin()" class="btn-discord w-full py-4 rounded-lg flex items-center justify-center gap-3">
+            <button onclick="fazerLogin()" class="btn-discord w-full py-4 rounded-lg font-bold flex items-center justify-center gap-3 hover:opacity-90">
                 <i class="fa-brands fa-discord text-xl"></i> VINCULAR DISCORD
             </button>
         </div>
     </div>
 
     <div id="tela-painel" class="hidden">
-        <div class="banner-perfil relative">
+        <div class="banner-guilda relative">
             <div class="max-w-6xl mx-auto h-full relative px-8">
-                <div class="absolute -bottom-14 flex items-end gap-6">
-                    <img id="user-avatar" src="" class="w-32 h-32 rounded-full border-4 border-[#0b0e11] bg-[#151921]">
-                    <div class="pb-4">
-                        <h1 id="user-name" class="text-3xl font-black italic text-white uppercase">CARREGANDO...</h1>
+                <div class="absolute -bottom-16 left-8 flex items-end gap-6">
+                    <img id="user-avatar" src="" class="w-36 h-36 rounded-full border-4 border-[#0b0e11] shadow-2xl bg-[#151921]">
+                    <div class="pb-6">
+                        <div class="flex items-center gap-3">
+                            <h1 id="user-name" class="text-4xl font-black italic text-white uppercase tracking-tighter">Carregando...</h1>
+                            <span class="badge-player px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest">Player</span>
+                        </div>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="badge-entrada px-2 py-0.5 rounded text-[10px] font-bold uppercase italic">Membro da Guilda</span>
+                        </div>
                     </div>
                 </div>
-                <div id="area-adm-btn" class="absolute -bottom-8 right-8 hidden">
-                    <a href="admin.html" class="bg-zinc-800 text-zinc-400 px-6 py-2 rounded-lg font-bold text-sm border border-zinc-700 flex items-center gap-2">
+                <div id="area-adm-btn" class="absolute -bottom-10 right-8 hidden">
+                    <a href="admin.html" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 px-6 py-2 rounded-lg font-bold text-sm border border-zinc-700 flex items-center gap-2">
                         <i class="fa-solid fa-user-shield text-emerald-500"></i> PAINEL ADM
                     </a>
                 </div>
             </div>
         </div>
-        <div class="max-w-6xl mx-auto mt-24 px-8">
-            <div class="card-bg p-8 mb-10">
-                <div class="flex justify-between items-center mb-8">
-                    <h3 class="text-xl font-bold italic text-zinc-500 uppercase">Meu Saldo</h3>
-                    <h2 id="user-saldo" class="text-4xl font-black text-white italic">R$ 0</h2>
+
+        <div class="max-w-6xl mx-auto mt-28 px-8 mb-20">
+            <div class="flex gap-8 border-b border-zinc-800 mb-8 text-sm font-bold uppercase italic tracking-tighter">
+                <div class="pb-3 border-b-2 border-blue-500 text-blue-400 flex items-center gap-2">
+                    <i class="fa-solid fa-receipt"></i> Meu Extrato
                 </div>
-                <table class="w-full text-left"><tbody id="tabela-logs"></tbody></table>
+            </div>
+
+            <div class="card-bg rounded-xl p-8 shadow-2xl">
+                <div class="flex justify-between items-center mb-10">
+                    <h3 class="text-xl font-bold italic uppercase tracking-tighter text-zinc-500">Histórico Financeiro</h3>
+                    <div class="text-right">
+                        <p class="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">Saldo Atual</p>
+                        <h2 id="user-saldo" class="text-5xl font-black text-white italic tracking-tighter">R$ 0</h2>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="text-zinc-500 text-[10px] uppercase border-b border-zinc-800 font-black">
+                            <tr>
+                                <th class="pb-4 px-4">Data</th>
+                                <th class="pb-4 px-4">Tipo</th>
+                                <th class="pb-4 px-4 text-center">Descrição</th>
+                                <th class="pb-4 px-4 text-right">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-logs" class="text-sm"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -56,10 +88,10 @@
         const SB_URL = 'https://mrzlwrlufgqbsapsidjy.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yemx3cmx1ZmdxYnNhcHNpZGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDc5MzMsImV4cCI6MjA5MDYyMzkzM30.6vH3KfWU1XJqRrCi6e___LNt-t1nZzQpfe6EumzvkmI';
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+        const REDIRECT_URI = 'https://1-karl.github.io/nebula-updates/index.html';
 
         function fazerLogin() {
-            const REDIRECT = 'https://1-karl.github.io/nebula-updates/index.html';
-            window.location.href = `https://discord.com/api/oauth2/authorize?client_id=1255697837971214476&redirect_uri=${encodeURIComponent(REDIRECT)}&response_type=token&scope=identify`;
+            window.location.href = `https://discord.com/api/oauth2/authorize?client_id=1255697837971214476&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
         }
 
         async function inicializar() {
@@ -76,7 +108,6 @@
                     const user = await res.json();
                     const avatar = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
                     
-                    // REGISTRA NO BANCO (CRUCIAL PARA A BUSCA FUNCIONAR)
                     const { data: dbUser } = await supabaseClient.from('usuarios').upsert({ 
                         id_discord: user.id, username: user.username, avatar_url: avatar 
                     }, { onConflict: 'id_discord' }).select().single();
@@ -85,6 +116,15 @@
                     document.getElementById('user-name').innerText = user.username.toUpperCase();
                     document.getElementById('user-avatar').src = avatar;
                     document.getElementById('user-saldo').innerText = `R$ ${(dbUser?.saldo || 0).toLocaleString('pt-BR')}`;
+
+                    const { data: logs } = await supabaseClient.from('historico').select('*').eq('usuario_id', user.id).order('data', { ascending: false });
+                    document.getElementById('tabela-logs').innerHTML = logs?.map(log => `
+                        <tr class="border-b border-[#1e2329] hover:bg-[#1a1f26] transition">
+                            <td class="p-4 text-zinc-500 text-[11px] font-medium italic">${new Date(log.data).toLocaleDateString()}</td>
+                            <td class="p-4"><span class="badge-entrada px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter">↗ Entrada</span></td>
+                            <td class="p-4 text-zinc-300 font-bold text-center italic tracking-tighter uppercase">${log.descricao}</td>
+                            <td class="p-4 text-right text-emerald-500 font-black text-lg italic">R$ ${log.valor_total.toLocaleString('pt-BR')}</td>
+                        </tr>`).join('') || '<tr><td colspan="4" class="p-10 text-center text-zinc-600 italic">Nenhum registro encontrado.</td></tr>';
 
                     const { data: isAdm } = await supabaseClient.from('admins').select('*').eq('id_discord', user.id).single();
                     if (isAdm) document.getElementById('area-adm-btn').classList.remove('hidden');
