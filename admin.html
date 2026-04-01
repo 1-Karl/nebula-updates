@@ -2,43 +2,54 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Nebula | Administração</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel ADM | Guilda</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background-color: #0b0e11; color: #f0f0f0; font-family: 'Inter', sans-serif; }
         .card-bg { background-color: #151921; border: 1px solid #1e2329; border-radius: 12px; }
-        .input-dark { background-color: #1a1f26; border: 1px solid #2d333b; color: white; padding: 14px; width: 100%; border-radius: 8px; outline: none; }
-        .results-box { position: absolute; width: 100%; background: #1a1f26; border: 1px solid #2d333b; border-radius: 8px; z-index: 50; margin-top: 5px; max-height: 200px; overflow-y: auto; }
-        .user-item { padding: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-bottom: 1px solid #2d333b; }
-        .user-item:hover { background: #242a33; }
+        .input-dark { background-color: #1a1f26; border: 1px solid #2d333b; color: white; padding: 14px; width: 100%; border-radius: 8px; outline: none; transition: 0.3s; }
+        .input-dark:focus { border-color: #10b981; }
+        .btn-enviar { background-color: #053b24; color: #10b981; font-weight: 900; padding: 14px; width: 100%; border-radius: 8px; transition: 0.3s; border: 1px solid #10b981; }
+        .btn-enviar:hover { background-color: #10b981; color: #0b0e11; }
+        .autocomplete-results { position: absolute; top: 100%; left: 0; right: 0; background-color: #1a1f26; border: 1px solid #2d333b; border-radius: 8px; z-index: 50; max-height: 250px; overflow-y: auto; margin-top: 5px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .autocomplete-item { padding: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #1e2329; }
+        .autocomplete-item:hover { background-color: #242a33; }
         .hidden { display: none !important; }
     </style>
 </head>
-<body class="p-10">
+<body class="p-8">
 
-    <div class="max-w-lg mx-auto">
-        <h1 class="text-3xl font-black italic uppercase mb-10 border-l-4 border-emerald-500 pl-4">Painel de Envio</h1>
+    <div class="max-w-xl mx-auto mt-10">
+        <h1 class="text-3xl font-black italic uppercase mb-8 flex items-center gap-3">
+            <i class="fa-solid fa-user-shield text-[#10b981]"></i> Administração de Prata
+        </h1>
 
         <div class="card-bg p-8 shadow-2xl">
             <div class="space-y-6">
                 <div class="relative">
-                    <label class="text-[10px] font-black text-zinc-500 uppercase mb-2 block">Pesquisar Membro do Discord</label>
-                    <input type="text" id="busca-nome" class="input-dark" placeholder="Digite o nome..." autocomplete="off">
+                    <label class="text-[10px] uppercase font-black text-gray-500 mb-2 block tracking-widest">Buscar Jogador do Discord</label>
+                    <input type="text" id="busca-input" class="input-dark font-bold text-white" placeholder="Digite o nome..." autocomplete="off">
                     <input type="hidden" id="id-selecionado">
-                    <div id="lista-busca" class="results-box hidden"></div>
+                    <div id="lista-busca" class="autocomplete-results hidden"></div>
                 </div>
 
                 <div>
-                    <label class="text-[10px] font-black text-zinc-500 uppercase mb-2 block">Quantia em Prata</label>
-                    <input type="number" id="valor-envio" class="input-dark font-mono text-xl text-emerald-500" placeholder="0">
+                    <label class="text-[10px] uppercase font-black text-gray-500 mb-2 block tracking-widest">Quantia em Prata</label>
+                    <input type="number" id="valor-input" class="input-dark font-mono text-2xl text-[#10b981] font-black" placeholder="0">
                 </div>
 
-                <button onclick="enviarPrata()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-lg font-black italic uppercase transition">Confirmar Transferência</button>
+                <button onclick="confirmarEnvio()" class="btn-enviar uppercase italic tracking-tighter text-lg mt-4">
+                    CONFIRMAR TRANSFERÊNCIA
+                </button>
             </div>
         </div>
-        <a href="index.html" class="block text-center mt-8 text-zinc-600 font-bold text-xs uppercase hover:text-white">← Voltar ao Início</a>
+        
+        <a href="index.html" class="block text-center mt-6 text-gray-600 text-[10px] font-black uppercase tracking-widest hover:text-white transition">
+            <i class="fa-solid fa-arrow-left"></i> Voltar ao Painel
+        </a>
     </div>
 
     <script>
@@ -46,53 +57,72 @@
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yemx3cmx1ZmdxYnNhcHNpZGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDc5MzMsImV4cCI6MjA5MDYyMzkzM30.6vH3KfWU1XJqRrCi6e___LNt-t1nZzQpfe6EumzvkmI';
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-        const campoBusca = document.getElementById('busca-nome');
-        const boxResultados = document.getElementById('lista-busca');
+        // Lógica de Autocompletar (Busca de jogadores vinculados)
+        document.getElementById('busca-input').addEventListener('input', async (e) => {
+            const termo = e.target.value.trim();
+            const lista = document.getElementById('lista-busca');
 
-        // BUSCA EM TEMPO REAL NO BANCO DE DADOS
-        campoBusca.addEventListener('input', async () => {
-            const termo = campoBusca.value;
-            if(termo.length < 2) return boxResultados.classList.add('hidden');
+            if (termo.length < 2) {
+                lista.classList.add('hidden');
+                return;
+            }
 
-            const { data } = await supabaseClient.from('usuarios').select('*').ilike('username', `%${termo}%`).limit(5);
+            // Pesquisa pelo nome (username) dentro do Supabase (que foi puxado do Discord)
+            const { data: usuarios } = await supabaseClient
+                .from('usuarios')
+                .select('*')
+                .ilike('username', `%${termo}%`)
+                .limit(5);
 
-            if(data && data.length > 0) {
-                boxResultados.innerHTML = data.map(u => `
-                    <div class="user-item" onclick="selecionar('${u.username}', '${u.id_discord}')">
-                        <img src="${u.avatar_url}" class="w-10 h-10 rounded-full">
-                        <div>
-                            <p class="font-bold text-sm uppercase italic text-white">${u.username}</p>
-                            <p class="text-[9px] font-mono text-zinc-500">${u.id_discord}</p>
+            if (usuarios && usuarios.length > 0) {
+                lista.innerHTML = usuarios.map(u => `
+                    <div class="autocomplete-item" onclick="selecionarUsuario('${u.username}', '${u.id_discord}')">
+                        <img src="${u.avatar_url}" class="w-10 h-10 rounded-full border border-gray-700">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-white uppercase italic text-sm">${u.username}</span>
+                            <span class="text-gray-500 font-mono text-[9px]">${u.id_discord}</span>
                         </div>
                     </div>
                 `).join('');
-                boxResultados.classList.remove('hidden');
+                lista.classList.remove('hidden');
             } else {
-                boxResultados.classList.add('hidden');
+                lista.classList.add('hidden');
             }
         });
 
-        function selecionar(nome, id) {
-            campoBusca.value = nome.toUpperCase();
+        // Função para quando clica no nome pesquisado
+        function selecionarUsuario(nome, id) {
+            document.getElementById('busca-input').value = nome.toUpperCase();
             document.getElementById('id-selecionado').value = id;
-            boxResultados.classList.add('hidden');
+            document.getElementById('lista-busca').classList.add('hidden');
         }
 
-        async function enviarPrata() {
-            const id = document.getElementById('id-selecionado').value;
-            const valor = parseInt(document.getElementById('valor-envio').value);
+        // Função de envio do saldo
+        async function confirmarEnvio() {
+            const idRec = document.getElementById('id-selecionado').value;
+            const valor = parseInt(document.getElementById('valor-input').value);
 
-            if(!id || isNaN(valor)) return alert("Selecione um membro e o valor!");
+            if (!idRec || !valor || valor <= 0) {
+                return alert("⚠️ Selecione um jogador na lista e preencha um valor válido!");
+            }
 
-            const { data: user } = await supabaseClient.from('usuarios').select('saldo').eq('id_discord', id).single();
-            const novoSaldo = (user.saldo || 0) + valor;
+            // Pega o saldo atual do destinatário
+            const { data: user } = await supabaseClient.from('usuarios').select('saldo').eq('id_discord', idRec).single();
+            const novoSaldo = (user?.saldo || 0) + valor;
 
-            await supabaseClient.from('usuarios').update({ saldo: novoSaldo }).eq('id_discord', id);
+            // Atualiza o saldo
+            await supabaseClient.from('usuarios').update({ saldo: novoSaldo }).eq('id_discord', idRec);
+            
+            // Registra no extrato da pessoa
             await supabaseClient.from('historico').insert([{ 
-                usuario_id: id, tipo: 'entrada', descricao: 'RECOMPENSA GUILDA', valor_total: valor, data: new Date() 
+                usuario_id: idRec, 
+                tipo: 'entrada', 
+                descricao: 'TRANSFERÊNCIA ADM', 
+                valor_total: valor, 
+                data: new Date() 
             }]);
 
-            alert("✅ Saldo enviado!");
+            alert("✅ Saldo transferido com sucesso!");
             location.reload();
         }
     </script>
