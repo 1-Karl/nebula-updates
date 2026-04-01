@@ -2,96 +2,67 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Nebula | Admin</title>
+    <title>ADM | Nebula</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         body { background-color: #0b0e11; color: #f0f0f0; font-family: 'Inter', sans-serif; }
-        .card-bg { background-color: #151921; border: 1px solid #1e2329; border-radius: 12px; }
-        .input-dark { background: #1a1f26; border: 1px solid #2d333b; color: white; padding: 15px; border-radius: 8px; width: 100%; outline: none; transition: 0.3s; }
-        .input-dark:focus { border-color: #10b981; }
-        .results { position: absolute; width: 100%; background: #1a1f26; border: 1px solid #2d333b; border-radius: 8px; z-index: 100; margin-top: 5px; max-height: 200px; overflow-y: auto; }
-        .user-row { padding: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #0b0e11; }
-        .user-row:hover { background: #242a33; }
+        .input { background: #1a1f26; border: 1px solid #2d333b; color: white; padding: 12px; border-radius: 8px; width: 100%; outline: none; }
+        .list { background: #1a1f26; border: 1px solid #2d333b; border-radius: 8px; position: absolute; width: 100%; z-index: 100; margin-top: 5px; }
+        .item { padding: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #0b0e11; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body class="p-10">
     <div class="max-w-md mx-auto">
-        <h1 class="text-3xl font-black italic uppercase mb-10 border-l-4 border-emerald-500 pl-4 tracking-tighter">Gerenciar Economia</h1>
-        
-        <div class="card-bg p-8 shadow-2xl">
-            <div class="space-y-6">
-                <div class="relative">
-                    <label class="text-[10px] font-black text-zinc-500 uppercase mb-2 block tracking-widest">Pesquisar Membro</label>
-                    <input type="text" id="user-search" class="input-dark font-bold" placeholder="Nome do jogador..." autocomplete="off">
-                    <input type="hidden" id="selected-id">
-                    <div id="search-results" class="results hidden"></div>
-                </div>
-
-                <div>
-                    <label class="text-[10px] font-black text-zinc-500 uppercase mb-2 block tracking-widest">Valor da Prata</label>
-                    <input type="number" id="amount" class="input-dark font-mono text-emerald-500 text-2xl font-black" placeholder="0">
-                </div>
-
-                <button onclick="confirmTransfer()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-lg font-black italic uppercase transition tracking-tighter">
-                    Confirmar Envio
-                </button>
+        <h1 class="text-2xl font-black italic uppercase mb-8 border-l-4 border-emerald-500 pl-4">Transferir Pratas</h1>
+        <div class="card-bg p-8 bg-[#151921] border border-[#1e2329] rounded-xl shadow-2xl">
+            <div class="relative mb-6">
+                <label class="text-[10px] font-black text-zinc-500 uppercase mb-2 block">Pesquisar Membro</label>
+                <input type="text" id="busca" class="input font-bold" placeholder="Digite o nome..." autocomplete="off">
+                <div id="res" class="list hidden"></div>
             </div>
+            <div class="mb-6">
+                <label class="text-[10px] font-black text-zinc-500 uppercase mb-2 block">Quantia</label>
+                <input type="number" id="valor" class="input font-mono text-emerald-500 text-xl font-black" placeholder="0">
+            </div>
+            <button onclick="enviar()" class="w-full bg-emerald-600 py-4 rounded-lg font-black italic uppercase hover:bg-emerald-500 transition">Confirmar Envio</button>
         </div>
-        
-        <a href="index.html" class="block text-center mt-8 text-zinc-600 font-black text-[10px] uppercase tracking-widest hover:text-white transition">
-            <i class="fa-solid fa-arrow-left"></i> Voltar ao Painel Principal
-        </a>
+        <a href="index.html" class="block text-center mt-8 text-zinc-600 font-bold text-xs uppercase">← Voltar ao Início</a>
     </div>
 
     <script>
         const SB_URL = 'https://mrzlwrlufgqbsapsidjy.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yemx3cmx1ZmdxYnNhcHNpZGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDc5MzMsImV4cCI6MjA5MDYyMzkzM30.6vH3KfWU1XJqRrCi6e___LNt-t1nZzQpfe6EumzvkmI';
         const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+        let selId = "";
 
-        document.getElementById('user-search').addEventListener('input', async (e) => {
-            const term = e.target.value;
-            if(term.length < 2) return;
-            
-            const { data } = await supabase.from('usuarios').select('*').ilike('username', `%${term}%`).limit(5);
-            const box = document.getElementById('search-results');
-            
-            if(data && data.length > 0) {
-                box.innerHTML = data.map(u => `
-                    <div class="user-row" onclick="pickUser('${u.username}','${u.id_discord}')">
-                        <img src="${u.avatar_url}" class="w-8 h-8 rounded-full border border-zinc-700">
-                        <span class="font-bold text-sm uppercase italic">${u.username}</span>
-                    </div>
-                `).join('');
-                box.classList.remove('hidden');
-            }
+        document.getElementById('busca').addEventListener('input', async (e) => {
+            const t = e.target.value;
+            if(t.length < 2) return;
+            const { data } = await supabase.from('usuarios').select('*').ilike('username', `%${t}%`).limit(5);
+            const box = document.getElementById('res');
+            box.innerHTML = data.map(u => `<div class="item" onclick="set('${u.username}','${u.id_discord}')"><img src="${u.avatar_url}" class="w-8 h-8 rounded-full border border-zinc-700"><b>${u.username.toUpperCase()}</b></div>`).join('');
+            box.classList.remove('hidden');
         });
 
-        function pickUser(name, id) {
-            document.getElementById('user-search').value = name.toUpperCase();
-            document.getElementById('selected-id').value = id;
-            document.getElementById('search-results').classList.add('hidden');
+        function set(n, id) {
+            document.getElementById('busca').value = n.toUpperCase();
+            selId = id;
+            document.getElementById('res').classList.add('hidden');
         }
 
-        async function confirmTransfer() {
-            const targetId = document.getElementById('selected-id').value;
-            const val = parseInt(document.getElementById('amount').value);
+        async function enviar() {
+            const v = parseInt(document.getElementById('valor').value);
+            if(!selId || !v) return alert("Selecione um jogador e digite o valor!");
 
-            if(!targetId || !val) return alert("Selecione um jogador e um valor!");
+            const { data: u } = await supabase.from('usuarios').select('saldo').eq('id_discord', selId).single();
+            const novoSaldo = (u?.saldo || 0) + v;
 
-            const { data: user } = await supabase.from('usuarios').select('saldo').eq('id_discord', targetId).single();
-            const newBalance = (user?.saldo || 0) + val;
-
-            await supabase.from('usuarios').update({ saldo: newBalance }).eq('id_discord', targetId);
-            await supabase.from('historico').insert([{ 
-                usuario_id: targetId, 
-                valor: val, 
-                descricao: "Crédito Administrativo",
-                data: new Date()
-            }]);
-
-            alert("Prata enviada com sucesso!");
+            await supabase.from('usuarios').update({ saldo: novoSaldo }).eq('id_discord', selId);
+            await supabase.from('historico').insert([{ usuario_id: selId, valor: v, descricao: "Crédito Administrativo" }]);
+            
+            alert("Transferência realizada!");
             location.reload();
         }
     </script>
