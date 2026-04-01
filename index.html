@@ -2,37 +2,57 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Nebula Economy</title>
+    <title>Nebula | Sistema de Economia</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #0b0e11; color: #f0f0f0; font-family: 'Inter', sans-serif; }
+        body { background-color: #0b0e11; color: #f0f0f0; font-family: 'Inter', sans-serif; margin: 0; }
         .card-bg { background-color: #151921; border: 1px solid #1e2329; border-radius: 12px; }
-        .banner { background: linear-gradient(90deg, #0f172a, #1e3a8a, #000); height: 180px; position: relative; }
-        .avatar { width: 130px; height: 130px; border: 4px solid #0b0e11; position: absolute; bottom: -65px; left: 30px; border-radius: 50%; }
+        .banner { background: linear-gradient(90deg, #0f172a, #1e3a8a, #000); height: 200px; position: relative; }
+        .avatar { width: 140px; height: 140px; border: 5px solid #0b0e11; position: absolute; bottom: -70px; left: 40px; border-radius: 50%; }
+        .badge-guilda { background: #053b24; color: #10b981; font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 4px; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
-    <div id="loading" class="flex h-screen items-center justify-center font-black italic text-zinc-700">CARREGANDO SISTEMA...</div>
+    <div id="loading" class="flex h-screen items-center justify-center font-black italic text-zinc-800">CARREGANDO...</div>
 
     <div id="login" class="flex h-screen items-center justify-center hidden">
-        <button onclick="login()" class="bg-[#5865F2] px-8 py-4 rounded font-black uppercase">Conectar Discord</button>
+        <button onclick="loginDiscord()" class="bg-[#5865F2] px-10 py-4 rounded-lg font-black uppercase tracking-tighter">Conectar Discord</button>
     </div>
 
-    <div id="painel" class="hidden">
+    <div id="app" class="hidden">
         <div class="banner">
             <img id="u-pic" src="" class="avatar bg-[#151921]">
-            <a id="adm-btn" href="admin.html" class="absolute bottom-4 right-4 bg-zinc-800 border border-zinc-700 px-4 py-2 rounded text-[10px] font-black hidden">PAINEL ADM</a>
+            <div id="adm-link" class="absolute -bottom-12 right-10 hidden">
+                <a href="admin.html" class="bg-[#1a1f26] border border-[#2d333b] text-zinc-400 px-6 py-2 rounded font-black text-[10px] hover:text-white transition uppercase">Painel ADM</a>
+            </div>
         </div>
-        <div class="max-w-6xl mx-auto mt-20 px-8 pb-20">
-            <h1 id="u-name" class="text-4xl font-black italic uppercase tracking-tighter">NOME</h1>
-            <div class="card-bg p-8 mt-10">
-                <div class="flex justify-between items-end border-b border-zinc-800 pb-6 mb-6">
-                    <span class="text-zinc-500 font-bold uppercase text-[10px] italic">Saldo Total</span>
-                    <h2 id="u-saldo" class="text-5xl font-black italic text-white">R$ 0</h2>
+
+        <div class="max-w-6xl mx-auto mt-28 px-10">
+            <h1 id="u-name" class="text-5xl font-black italic uppercase tracking-tighter text-white">NOME</h1>
+            <div class="mt-2 flex gap-2">
+                <span class="badge-guilda italic uppercase">Membro da Guilda</span>
+            </div>
+
+            <div class="card-bg p-10 mt-12 relative">
+                <div class="flex justify-between items-center border-b border-zinc-800 pb-8 mb-8">
+                    <h3 class="text-zinc-500 font-black uppercase text-[11px] italic tracking-widest">Histórico Financeiro</h3>
+                    <div class="text-right">
+                        <p class="text-zinc-500 font-black uppercase text-[10px] italic mb-1">Saldo Atual</p>
+                        <h2 id="u-saldo" class="text-6xl font-black italic text-white tracking-tighter">R$ 0</h2>
+                    </div>
                 </div>
                 <table class="w-full text-left">
+                    <thead class="text-zinc-600 text-[10px] font-black uppercase italic">
+                        <tr>
+                            <th class="pb-4">Data</th>
+                            <th class="pb-4">Tipo</th>
+                            <th class="pb-4">Descrição</th>
+                            <th class="pb-4 text-right">Valor</th>
+                        </tr>
+                    </thead>
                     <tbody id="u-logs"></tbody>
                 </table>
             </div>
@@ -40,60 +60,57 @@
     </div>
 
     <script>
-        const SB_URL = 'https://mrzlwrlufgqbsapsidjy.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yemx3cmx1ZmdxYnNhcHNpZGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDc5MzMsImV4cCI6MjA5MDYyMzkzM30.6vH3KfWU1XJqRrCi6e___LNt-t1nZzQpfe6EumzvkmI';
-        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+        const CONFIG = {
+            url: 'https://mrzlwrlufgqbsapsidjy.supabase.co',
+            key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yemx3cmx1ZmdxYnNhcHNpZGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDc5MzMsImV4cCI6MjA5MDYyMzkzM30.6vH3KfWU1XJqRrCi6e___LNt-t1nZzQpfe6EumzvkmI'
+        };
+        const sb = window.supabase.createClient(CONFIG.url, CONFIG.key);
 
-        function login() {
+        function loginDiscord() {
             const uri = window.location.origin + window.location.pathname;
             window.location.href = `https://discord.com/api/oauth2/authorize?client_id=1255697837971214476&redirect_uri=${encodeURIComponent(uri)}&response_type=token&scope=identify`;
         }
 
         async function init() {
-            let tk = localStorage.getItem('tk_nebula');
+            let tk = localStorage.getItem('nebula_token');
             if(window.location.hash) {
                 tk = new URLSearchParams(window.location.hash.replace('#','?')).get('access_token');
-                if(tk) localStorage.setItem('tk_nebula', tk);
+                if(tk) localStorage.setItem('nebula_token', tk);
                 window.history.replaceState({}, "", window.location.pathname);
             }
 
             if(!tk) {
                 document.getElementById('loading').classList.add('hidden');
-                document.getElementById('login').classList.remove('hidden');
-                return;
+                return document.getElementById('login').classList.remove('hidden');
             }
 
-            try {
-                const r = await fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${tk}` } });
-                const user = await r.json();
+            const res = await fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${tk}` } });
+            const user = await res.json();
 
-                if(user.id) {
-                    const img = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
-                    const { data: dbUser } = await supabase.from('usuarios').upsert({ id_discord: user.id, username: user.username, avatar_url: img }).select().single();
-                    
-                    document.getElementById('loading').classList.add('hidden');
-                    document.getElementById('painel').classList.remove('hidden');
-                    document.getElementById('u-name').innerText = user.username.toUpperCase();
-                    document.getElementById('u-pic').src = img;
-                    document.getElementById('u-saldo').innerText = `R$ ${(dbUser?.saldo || 0).toLocaleString('pt-BR')}`;
+            if(user.id) {
+                const img = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+                const { data: dbUser } = await sb.from('usuarios').upsert({ id_discord: user.id, username: user.username, avatar_url: img }).select().maybeSingle();
+                
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+                document.getElementById('u-name').innerText = user.username.toUpperCase();
+                document.getElementById('u-pic').src = img;
+                document.getElementById('u-saldo').innerText = `R$ ${(dbUser?.saldo || 0).toLocaleString('pt-BR')}`;
 
-                    const { data: isAdm } = await supabase.from('admins').select('*').eq('id_discord', user.id).maybeSingle();
-                    if(isAdm) document.getElementById('adm-btn').classList.remove('hidden');
+                const { data: isAdm } = await sb.from('admins').select('*').eq('id_discord', user.id).maybeSingle();
+                if(isAdm) document.getElementById('adm-link').classList.remove('hidden');
 
-                    const { data: logs } = await supabase.from('historico').select('*').eq('usuario_id', user.id).order('data', {ascending: false});
-                    document.getElementById('u-logs').innerHTML = logs.map(l => `
-                        <tr class="border-b border-zinc-900">
-                            <td class="py-4 text-zinc-600 font-bold italic text-[10px]">${new Date(l.data).toLocaleDateString()}</td>
-                            <td class="py-4 text-emerald-500 font-black italic uppercase text-sm">R$ ${l.valor.toLocaleString('pt-BR')}</td>
-                            <td class="py-4 text-right text-zinc-400 font-bold uppercase text-[10px] italic">${l.descricao}</td>
-                        </tr>`).join('');
-                }
-            } catch(e) {
-                localStorage.removeItem('tk_nebula');
-                location.reload();
+                const { data: logs } = await sb.from('historico').select('*').eq('usuario_id', user.id).order('data', {ascending: false});
+                document.getElementById('u-logs').innerHTML = (logs || []).map(l => `
+                    <tr class="border-b border-zinc-900/50">
+                        <td class="py-4 text-zinc-500 font-bold italic text-[10px] uppercase">${new Date(l.data).toLocaleDateString()}</td>
+                        <td class="py-4 font-black italic uppercase text-[10px] ${l.valor > 0 ? 'text-emerald-500' : 'text-red-500'}">${l.valor > 0 ? '↗ Entrada' : '↘ Saída'}</td>
+                        <td class="py-4 text-zinc-400 font-bold uppercase text-[10px] italic">${l.descricao}</td>
+                        <td class="py-4 text-right font-black italic text-lg ${l.valor > 0 ? 'text-emerald-500' : 'text-red-500'}">R$ ${l.valor.toLocaleString('pt-BR')}</td>
+                    </tr>`).join('');
             }
         }
-        window.onload = init;
+        init();
     </script>
 </body>
 </html>
