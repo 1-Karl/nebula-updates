@@ -1,7 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.js" },
-    { "source": "/auth/(.*)", "destination": "/api/index.js" },
-    { "source": "/callback", "destination": "/api/index.js" }
-  ]
-}
