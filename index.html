@@ -3,213 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Administrativo | Guilda</title>
+    <title>Sistema de Economia | Guilda</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #0b0e11; color: #f0f0f0; font-family: 'Inter', sans-serif; }
+        body { background-color: #0b0e11; color: #f0f0f0; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .card-bg { background-color: #151921; border: 1px solid #1e2329; }
-        .input-dark { background-color: #1a1f26; border: 1px solid #2d333b; border-radius: 8px; color: white; padding: 12px; width: 100%; outline: none; }
-        .input-dark:focus { border-color: #10b981; }
-        .btn-primario { background-color: #053b24; color: #10b981; border: 1px solid #10b981; transition: 0.2s; }
-        .btn-primario:hover { background-color: #10b981; color: white; }
-        .tab-active { border-bottom: 2px solid #10b981; color: #10b981; }
-        .autocomplete-results { position: absolute; top: 100%; left: 0; right: 0; background-color: #1a1f26; border: 1px solid #2d333b; border-radius: 8px; z-index: 50; max-height: 200px; overflow-y: auto; }
-        .autocomplete-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #242933; display: flex; align-items: center; gap: 12px; }
-        .autocomplete-item:hover { background-color: #242933; }
+        .btn-discord { background-color: #5865F2; transition: 0.3s; }
+        .badge-entrada { background-color: #053b24; color: #10b981; }
         .hidden { display: none !important; }
+        .banner-guilda { background: linear-gradient(to right, #0f172a, #1e3a8a, #000); border-bottom: 1px solid #1e2329; }
+        .btn-adm { background-color: #242933; border: 1px solid #363d4a; color: #a1a7b3; transition: 0.2s; }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body>
 
-    <div id="tela-negado" class="flex flex-col items-center justify-center h-[80vh] hidden">
-        <i class="fa-solid fa-lock text-6xl text-red-600 mb-4"></i>
-        <h1 class="text-2xl font-bold text-red-500 font-mono">ACESSO RESTRITO - ÁREA MILITAR</h1>
-        <p class="text-gray-500 mt-2">Seu ID não possui permissões administrativas.</p>
+    <div id="tela-login" class="flex items-center justify-center h-screen hidden">
+        <div class="card-bg p-10 rounded-2xl text-center shadow-2xl max-w-sm border-t-4 border-[#5865F2]">
+            <h1 class="text-2xl font-bold mb-2">Bem-vindo à Guilda</h1>
+            <p class="text-gray-400 mb-8 text-sm">Conecte sua conta para acessar seu extrato.</p>
+            <button onclick="fazerLogin()" class="btn-discord w-full py-3 rounded-lg font-bold flex items-center justify-center gap-3">
+                <i class="fa-brands fa-discord text-xl"></i> VINCULAR DISCORD
+            </button>
+        </div>
     </div>
 
-    <div id="tela-adm" class="max-w-5xl mx-auto hidden">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-black italic uppercase tracking-tighter italic">
-                <i class="fa-solid fa-screwdriver-wrench text-emerald-500 mr-2"></i> Command Center
-            </h1>
-            <div id="badge-cargo" class="text-[10px] font-black px-3 py-1 rounded bg-zinc-800 border border-zinc-700">CARREGANDO...</div>
-        </div>
-
-        <div class="flex gap-6 border-b border-zinc-800 mb-8 overflow-x-auto">
-            <button onclick="mudarAba('financas')" id="btn-financas" class="tab-active pb-4 font-bold text-sm uppercase tracking-widest flex items-center gap-2">
-                <i class="fa-solid fa-coins"></i> Finanças
-            </button>
-            <button onclick="mudarAba('equipe')" id="btn-equipe" class="pb-4 font-bold text-sm uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-                <i class="fa-solid fa-users-gear"></i> Gerenciar Equipe
-            </button>
-            </div>
-
-        <div id="aba-financas" class="grid md:grid-cols-1 gap-6">
-            <div class="card-bg p-8 rounded-xl relative shadow-2xl border-t-2 border-emerald-500">
-                <h3 class="text-lg font-bold mb-6 italic">Modificar Saldo de Jogador</h3>
-                
-                <div class="grid md:grid-cols-2 gap-6">
-                    <div class="relative">
-                        <label class="text-[10px] uppercase font-bold text-zinc-500 mb-2 block">Destinatário (Busca Inteligente)</label>
-                        <div class="relative">
-                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-4 text-zinc-500"></i>
-                            <input type="text" id="destinatario-input" class="input-dark pl-12" placeholder="Digite o Nome ou ID do Discord...">
+    <div id="tela-painel" class="hidden">
+        <div class="banner-guilda h-44 w-full relative">
+            <div class="max-w-6xl mx-auto h-full relative">
+                <div class="absolute -bottom-12 left-8 flex items-end gap-6">
+                    <img id="user-avatar" src="" class="w-32 h-32 rounded-full border-4 border-[#0b0e11] bg-[#151921] shadow-2xl">
+                    <div class="pb-4">
+                        <div class="flex items-center gap-2">
+                            <h1 id="user-name" class="text-3xl font-bold italic text-white">Carregando...</h1>
                         </div>
-                        <input type="hidden" id="destinatario-id-oculto">
-                        <div id="lista-autocomplete" class="autocomplete-results hidden shadow-2xl border border-emerald-900/30"></div>
-                    </div>
-
-                    <div>
-                        <label class="text-[10px] uppercase font-bold text-zinc-500 mb-2 block">Valor da Operação (Prata)</label>
-                        <input type="number" id="quantia-input" class="input-dark font-mono text-emerald-400 text-xl" placeholder="0">
-                        <p class="text-[9px] text-zinc-600 mt-2 uppercase font-bold italic">* Use valores negativos para retirar saldo.</p>
                     </div>
                 </div>
-
-                <div class="mt-8 flex gap-4">
-                    <button onclick="processarOperacao()" class="btn-primario flex-1 py-4 rounded-lg font-black uppercase italic tracking-widest shadow-lg">
-                        Confirmar Alteração de Saldo
+                <div class="absolute -bottom-6 right-8 hidden" id="area-adm-btn">
+                    <button onclick="irParaAdm()" class="btn-adm px-6 py-2.5 rounded-lg font-bold flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-user-shield"></i> PAINEL ADM
                     </button>
                 </div>
-                <div id="status-msg" class="mt-4 text-center font-bold text-sm"></div>
             </div>
         </div>
 
-        <div id="aba-equipe" class="hidden">
-            <div class="card-bg p-8 rounded-xl shadow-2xl border-t-2 border-blue-500">
-                <h3 class="text-lg font-bold mb-6 italic">Administradores do Sistema</h3>
-                <div class="grid gap-4" id="lista-admins-grid">
+        <div class="max-w-6xl mx-auto mt-20 px-8">
+            <div class="card-bg rounded-xl p-8 shadow-2xl mb-10">
+                <div class="flex justify-between items-center mb-10">
+                    <h3 class="text-xl font-bold italic">Meu Saldo</h3>
+                    <div class="text-right">
+                        <h2 id="user-saldo" class="text-4xl font-black text-white italic">R$ 0</h2>
                     </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <tbody id="tabela-logs" class="text-sm"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
-
     </div>
 
     <script>
+        const CLIENT_ID = '1255697837971214476'; 
         const SB_URL = 'https://mrzlwrlufgqbsapsidjy.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yemx3cmx1ZmdxYnNhcHNpZGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDc5MzMsImV4cCI6MjA5MDYyMzkzM30.6vH3KfWU1XJqRrCi6e___LNt-t1nZzQpfe6EumzvkmI';
+        const REDIRECT_URI = 'https://1-karl.github.io/nebula-updates/index.html';
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
-        let userLogado = null;
 
-        async function verificarAcesso() {
+        function fazerLogin() {
+            window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
+        }
+
+        function irParaAdm() {
+            window.location.href = 'admin.html' + window.location.hash;
+        }
+
+        async function inicializar() {
             const hash = window.location.hash;
             if (hash.includes('access_token')) {
+                document.getElementById('tela-painel').classList.remove('hidden');
                 const params = new URLSearchParams(hash.replace('#', '?'));
                 const token = params.get('access_token');
                 const userReq = await fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${token}` } });
                 const userData = await userReq.json();
                 
-                // Busca o cargo na tabela admins
-                const { data: adminInfo } = await supabaseClient.from('admins').select('*').eq('id_discord', userData.id).single();
-                
-                if (adminInfo) {
-                    userLogado = adminInfo;
-                    document.getElementById('tela-adm').classList.remove('hidden');
-                    document.getElementById('badge-cargo').innerText = adminInfo.cargo || 'ADMIN';
-                    configurarAutocomplete();
-                    carregarListaAdmins();
-                } else {
-                    document.getElementById('tela-negado').classList.remove('hidden');
-                }
+                document.getElementById('user-name').innerText = userData.username;
+                document.getElementById('user-avatar').src = `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`;
+
+                const { data: userDb } = await supabaseClient.from('usuarios').select('saldo').eq('id_discord', userData.id).single();
+                if (userDb) document.getElementById('user-saldo').innerText = `R$ ${userDb.saldo.toLocaleString('pt-BR')}`;
+
+                const { data: isAdm } = await supabaseClient.from('admins').select('*').eq('id_discord', userData.id).single();
+                if (isAdm) document.getElementById('area-adm-btn').classList.remove('hidden');
             } else {
-                document.getElementById('tela-negado').classList.remove('hidden');
+                document.getElementById('tela-login').classList.remove('hidden');
             }
         }
-
-        function mudarAba(aba) {
-            document.getElementById('aba-financas').classList.add('hidden');
-            document.getElementById('aba-equipe').classList.add('hidden');
-            document.getElementById('btn-financas').classList.replace('text-emerald-500', 'text-zinc-500');
-            document.getElementById('btn-equipe').classList.replace('text-emerald-500', 'text-zinc-500');
-            document.getElementById('btn-financas').classList.remove('tab-active');
-            document.getElementById('btn-equipe').classList.remove('tab-active');
-
-            document.getElementById('aba-' + aba).classList.remove('hidden');
-            document.getElementById('btn-' + aba).classList.add('tab-active');
-        }
-
-        function configurarAutocomplete() {
-            const input = document.getElementById('destinatario-input');
-            const lista = document.getElementById('lista-autocomplete');
-            input.addEventListener('input', async () => {
-                const termo = input.value.trim();
-                if (termo.length < 2) return lista.classList.add('hidden');
-                
-                const { data: usuarios } = await supabaseClient.rpc('buscar_usuarios', { termo: termo });
-                
-                if (usuarios?.length > 0) {
-                    lista.innerHTML = usuarios.map(u => `
-                        <div class="autocomplete-item" onclick="selecionarUsuario('${u.username}', '${u.id_discord}')">
-                            <div class="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-[10px] border border-zinc-700">
-                                ${u.username.substring(0,2).toUpperCase()}
-                            </div>
-                            <div>
-                                <p class="text-sm font-bold text-white">${u.username}</p>
-                                <p class="text-[9px] text-zinc-500 font-mono">${u.id_discord}</p>
-                            </div>
-                        </div>`).join('');
-                    lista.classList.remove('hidden');
-                }
-            });
-        }
-
-        function selecionarUsuario(nome, id) {
-            document.getElementById('destinatario-input').value = nome;
-            document.getElementById('destinatario-id-oculto').value = id;
-            document.getElementById('lista-autocomplete').classList.add('hidden');
-        }
-
-        async function processarOperacao() {
-            const idDestino = document.getElementById('destinatario-id-oculto').value;
-            const valor = parseInt(document.getElementById('quantia-input').value);
-            const msg = document.getElementById('status-msg');
-
-            if (!idDestino || isNaN(valor)) return alert("Selecione um usuário e digite o valor!");
-
-            msg.innerText = "⚡ PROCESSANDO OPERAÇÃO...";
-            msg.className = "mt-4 text-center font-bold text-sm text-yellow-500";
-
-            try {
-                const { data: user } = await supabaseClient.from('usuarios').select('saldo').eq('id_discord', idDestino).single();
-                const novoSaldo = (user?.saldo || 0) + valor;
-
-                await supabaseClient.from('usuarios').upsert({ id_discord: idDestino, saldo: novoSaldo }, { onConflict: 'id_discord' });
-                
-                await supabaseClient.from('historico').insert([{
-                    usuario_id: idDestino,
-                    tipo: valor >= 0 ? 'entrada' : 'saida',
-                    descricao: valor >= 0 ? 'Depósito via ADM' : 'Retirada via ADM',
-                    valor_total: Math.abs(valor),
-                    data: new Date()
-                }]);
-
-                msg.innerText = "✅ OPERAÇÃO CONCLUÍDA COM SUCESSO!";
-                msg.className = "mt-4 text-center font-bold text-sm text-emerald-500";
-                document.getElementById('quantia-input').value = "";
-            } catch (error) {
-                msg.innerText = "❌ ERRO NA OPERAÇÃO. TENTE NOVAMENTE.";
-                msg.className = "mt-4 text-center font-bold text-sm text-red-500";
-            }
-        }
-
-        async function carregarListaAdmins() {
-            const { data: admins } = await supabaseClient.from('admins').select('*');
-            document.getElementById('lista-admins-grid').innerHTML = admins.map(a => `
-                <div class="flex justify-between items-center p-4 bg-zinc-900/50 rounded-lg border border-zinc-800">
-                    <div class="flex items-center gap-3">
-                        <i class="fa-solid fa-user-shield text-blue-400"></i>
-                        <span class="font-mono text-sm">${a.id_discord}</span>
-                    </div>
-                    <span class="text-[10px] font-black px-2 py-1 rounded bg-blue-900/30 text-blue-400 border border-blue-800/30">
-                        ${a.cargo || 'MODERADOR'}
-                    </span>
-                </div>
-            `).join('');
-        }
-
-        window.onload = verificarAcesso;
+        window.onload = inicializar;
     </script>
 </body>
 </html>
