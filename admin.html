@@ -1,0 +1,118 @@
+!DOCTYPE html
+html lang=pt-br
+head
+    meta charset=UTF-8
+    meta name=viewport content=width=device-width, initial-scale=1.0
+    titlePainel ADM  Guildatitle
+    script src=httpscdn.tailwindcss.comscript
+    script src=httpscdn.jsdelivr.netnpm@supabasesupabase-js@2script
+    link rel=stylesheet href=httpscdnjs.cloudflare.comajaxlibsfont-awesome6.0.0cssall.min.css
+    style
+        body { background-color #0b0e11; color #f0f0f0; font-family 'Inter', sans-serif; }
+        .card-bg { background-color #151921; border 1px solid #1e2329; }
+        .input-dark { background-color #1a1f26; border 1px solid #2d333b; border-radius 8px; color white; padding 12px; width 100%; }
+        .btn-enviar { background-color #008f44; color white; font-weight bold; padding 12px; border-radius 8px; width 100%; }
+        .autocomplete-results { position absolute; top 100%; left 0; right 0; background-color #1a1f26; border 1px solid #2d333b; border-radius 8px; z-index 50; }
+        .autocomplete-item { padding 10px; cursor pointer; border-bottom 1px solid #242933; display flex; align-items center; gap 10px; }
+        .autocomplete-itemhover { background-color #242933; }
+        .hidden { display none !important; }
+    style
+head
+body class=p-6
+    div id=tela-negado class=flex items-center justify-center h-screen hidden
+        h1 class=text-2xl font-bold text-red-500Acesso Negadoh1
+    div
+
+    div id=tela-adm class=max-w-4xl mx-auto hidden
+        h1 class=text-3xl font-bold mb-10 italici class=fa-solid fa-user-shieldi Administraçãoh1
+        div class=grid mdgrid-cols-2 gap-8
+            div class=card-bg p-8 rounded-xl relative
+                h3 class=mb-6 font-boldTransferir Pratah3
+                div class=space-y-4
+                    div class=relative
+                        label class=text-xs text-gray-500 block mb-1Destinatáriolabel
+                        input type=text id=destinatario-input class=input-dark placeholder=Nome ou ID...
+                        input type=hidden id=destinatario-id-oculto
+                        div id=lista-autocomplete class=autocomplete-results hiddendiv
+                    div
+                    div
+                        label class=text-xs text-gray-500 block mb-1Valorlabel
+                        input type=number id=quantia-input class=input-dark placeholder=0
+                    div
+                    button onclick=confirmarEnvio() class=btn-enviarCONFIRMAR ENVIObutton
+                    p id=status-msg class=text-sm mt-2p
+                div
+            div
+            div class=card-bg p-8 rounded-xl
+                h3 class=mb-6 font-boldAdministradoresh3
+                div id=lista-admins class=space-y-2div
+            div
+        div
+    div
+
+    script
+        const SB_URL = 'httpsmrzlwrlufgqbsapsidjy.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yemx3cmx1ZmdxYnNhcHNpZGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDc5MzMsImV4cCI6MjA5MDYyMzkzM30.6vH3KfWU1XJqRrCi6e___LNt-t1nZzQpfe6EumzvkmI';
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+        let idAdmLogado = null;
+
+        async function verificarAcesso() {
+            const hash = window.location.hash;
+            if (hash.includes('access_token')) {
+                const params = new URLSearchParams(hash.replace('#', ''));
+                const token = params.get('access_token');
+                const userReq = await fetch('httpsdiscord.comapiusers@me', { headers { Authorization `Bearer ${token}` } });
+                const userData = await userReq.json();
+                const { data isAdm } = await supabaseClient.from('admins').select('').eq('id_discord', userData.id).single();
+                if (isAdm) {
+                    idAdmLogado = userData.id;
+                    document.getElementById('tela-adm').classList.remove('hidden');
+                    configurarAutocomplete();
+                    carregarListaAdmins();
+                } else { document.getElementById('tela-negado').classList.remove('hidden'); }
+            } else { document.getElementById('tela-negado').classList.remove('hidden'); }
+        }
+
+        function configurarAutocomplete() {
+            const input = document.getElementById('destinatario-input');
+            const lista = document.getElementById('lista-autocomplete');
+            input.addEventListener('input', async () = {
+                const termo = input.value.trim();
+                if (termo.length  2) return lista.classList.add('hidden');
+                const { data usuarios } = await supabaseClient.rpc('buscar_usuarios', { termo termo });
+                if (usuarios.length  0) {
+                    lista.innerHTML = usuarios.map(u = `
+                        div class=autocomplete-item onclick=selecionarUsuario('${u.username}', '${u.id_discord}')
+                            img src=${u.avatar_url  'httpscdn.discordapp.comembedavatars0.png'} class=w-6 h-6 rounded-full
+                            span${u.username} small class=text-gray-500${u.id_discord}smallspan
+                        div`).join('');
+                    lista.classList.remove('hidden');
+                }
+            });
+        }
+
+        function selecionarUsuario(nome, id) {
+            document.getElementById('destinatario-input').value = nome;
+            document.getElementById('destinatario-id-oculto').value = id;
+            document.getElementById('lista-autocomplete').classList.add('hidden');
+        }
+
+        async function confirmarEnvio() {
+            const idRec = document.getElementById('destinatario-id-oculto').value;
+            const valor = parseInt(document.getElementById('quantia-input').value);
+            if (!idRec  !valor) return alert(Preencha tudo!);
+            
+            const { data user } = await supabaseClient.from('usuarios').select('saldo').eq('id_discord', idRec).single();
+            await supabaseClient.from('usuarios').update({ saldo user.saldo + valor }).eq('id_discord', idRec);
+            await supabaseClient.from('historico').insert([{ usuario_id idRec, tipo 'entrada', descricao 'Envio ADM', valor_total valor, data new Date() }]);
+            alert(Enviado!);
+        }
+
+        async function carregarListaAdmins() {
+            const { data admins } = await supabaseClient.from('admins').select('');
+            document.getElementById('lista-admins').innerHTML = admins.map(a = `div class=p-2 bg-[#1a1f26] rounded text-sm${a.id_discord}div`).join('');
+        }
+        window.onload = verificarAcesso;
+    script
+body
+html
