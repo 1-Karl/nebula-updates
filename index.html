@@ -2,46 +2,62 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nebula | ADM</title>
+    <title>Nebula Economy | Guilda</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background-color: #0b0e11; color: #f0f0f0; font-family: 'Inter', sans-serif; }
         .card-bg { background-color: #151921; border: 1px solid #1e2329; border-radius: 12px; }
-        .input-dark { background-color: #1a1f26; border: 1px solid #2d333b; color: white; padding: 14px; width: 100%; border-radius: 8px; outline: none; }
-        .autocomplete-results { position: absolute; top: 100%; left: 0; right: 0; background-color: #1a1f26; border: 1px solid #2d333b; border-radius: 8px; z-index: 100; max-height: 250px; overflow-y: auto; }
+        .banner { background: linear-gradient(90deg, #0f172a 0%, #1e3a8a 100%); height: 200px; border-bottom: 1px solid #1e2329; }
+        .avatar-img { width: 130px; height: 130px; border: 4px solid #0b0e11; border-radius: 50%; position: absolute; bottom: -65px; left: 30px; }
         .hidden { display: none !important; }
-        .btn-enviar { background-color: #008f44; color: white; font-weight: bold; padding: 14px; width: 100%; border-radius: 8px; }
+        .badge-azul { background: #1e2329; color: #5865F2; border: 1px solid #2d333b; padding: 2px 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; border-radius: 4px; }
     </style>
 </head>
-<body class="p-8">
-    <div class="max-w-xl mx-auto mt-10">
-        <h1 class="text-3xl font-black italic uppercase mb-8 flex items-center gap-3 text-white">
-            <i class="fa-solid fa-money-bill-transfer text-emerald-500"></i> Gestão de Prata
-        </h1>
+<body>
 
-        <div class="card-bg p-8 shadow-2xl border-t-4 border-emerald-600">
-            <div class="space-y-6">
-                <div class="relative">
-                    <label class="text-[10px] uppercase font-black text-zinc-500 mb-2 block tracking-widest">Localizar Jogador</label>
-                    <input type="text" id="busca-input" class="input-dark font-bold" placeholder="Nome ou ID do Discord..." autocomplete="off">
-                    <input type="hidden" id="id-selecionado">
-                    <div id="lista-busca" class="autocomplete-results hidden shadow-2xl"></div>
+    <div id="tela-login" class="flex items-center justify-center h-screen hidden">
+        <div class="card-bg p-10 text-center border-t-4 border-[#5865F2] shadow-2xl">
+            <h1 class="text-3xl font-black italic mb-6 tracking-tighter">NEBULA ECONOMY</h1>
+            <button onclick="loginDiscord()" class="bg-[#5865F2] px-8 py-4 rounded-lg font-bold flex items-center gap-3 hover:scale-105 transition">
+                <i class="fa-brands fa-discord text-xl"></i> VINCULAR CONTA DISCORD
+            </button>
+        </div>
+    </div>
+
+    <div id="tela-app" class="hidden">
+        <div class="banner relative">
+            <div class="max-w-6xl mx-auto h-full relative">
+                <img id="user-pic" src="" class="avatar-img bg-[#151921]">
+                <div id="btn-adm-container" class="absolute bottom-4 right-4 hidden">
+                    <a href="admin.html" class="bg-zinc-800 border border-zinc-700 px-4 py-2 rounded text-xs font-bold text-zinc-400">PAINEL ADM</a>
                 </div>
-
-                <div>
-                    <label class="text-[10px] uppercase font-black text-zinc-500 mb-2 block tracking-widest">Valor para Enviar</label>
-                    <input type="number" id="valor-input" class="input-dark font-mono text-xl text-emerald-500" placeholder="0">
-                </div>
-
-                <button onclick="confirmarEnvio()" class="btn-enviar uppercase italic tracking-tighter text-lg hover:bg-emerald-500 transition">
-                    Confirmar Envio
-                </button>
             </div>
         </div>
-        <a href="index.html" class="block text-center mt-6 text-zinc-600 text-xs hover:text-zinc-400 font-bold uppercase tracking-widest">← Voltar ao Início</a>
+
+        <div class="max-w-6xl mx-auto mt-20 px-8">
+            <div class="mb-10">
+                <div class="flex items-center gap-3">
+                    <h1 id="user-name" class="text-4xl font-black italic uppercase text-white tracking-tighter">Carregando...</h1>
+                    <span class="badge-azul">Membro</span>
+                </div>
+                <p class="text-emerald-500 font-bold italic text-sm mt-1">Status: Ativo na Guilda</p>
+            </div>
+
+            <div class="card-bg p-8">
+                <div class="flex justify-between items-center border-b border-zinc-800 pb-6 mb-6">
+                    <h3 class="text-zinc-500 font-bold uppercase text-xs tracking-widest italic">Histórico de Transações</h3>
+                    <div class="text-right">
+                        <span class="text-[10px] font-black text-zinc-500 uppercase">Saldo Total</span>
+                        <h2 id="user-saldo" class="text-5xl font-black italic text-white">R$ 0</h2>
+                    </div>
+                </div>
+                <table class="w-full text-left">
+                    <tbody id="lista-logs"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -49,53 +65,58 @@
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yemx3cmx1ZmdxYnNhcHNpZGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDc5MzMsImV4cCI6MjA5MDYyMzkzM30.6vH3KfWU1XJqRrCi6e___LNt-t1nZzQpfe6EumzvkmI';
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-        document.getElementById('busca-input').addEventListener('input', async (e) => {
-            const termo = e.target.value.trim();
-            const lista = document.getElementById('lista-busca');
-
-            if (termo.length < 2) return lista.classList.add('hidden');
-
-            const { data: usuarios } = await supabaseClient.from('usuarios')
-                .select('username, id_discord, avatar_url')
-                .or(`username.ilike.%${termo}%,id_discord.eq.${termo}`)
-                .limit(5);
-
-            if (usuarios && usuarios.length > 0) {
-                lista.innerHTML = usuarios.map(u => `
-                    <div onclick="selecionar('${u.username}', '${u.id_discord}')" class="p-4 hover:bg-[#242933] cursor-pointer flex items-center gap-4 border-b border-[#1e2329]">
-                        <img src="${u.avatar_url}" class="w-10 h-10 rounded-full border border-zinc-700">
-                        <div class="flex flex-col">
-                            <span class="font-bold text-white uppercase italic text-sm">${u.username}</span>
-                            <small class="text-zinc-500 font-mono text-[9px]">${u.id_discord}</small>
-                        </div>
-                    </div>`).join('');
-                lista.classList.remove('hidden');
-            } else { lista.classList.add('hidden'); }
-        });
-
-        function selecionar(nome, id) {
-            document.getElementById('busca-input').value = nome.toUpperCase();
-            document.getElementById('id-selecionado').value = id;
-            document.getElementById('lista-busca').classList.add('hidden');
+        function loginDiscord() {
+            const REDIRECT = 'https://1-karl.github.io/nebula-updates/index.html';
+            window.location.href = `https://discord.com/api/oauth2/authorize?client_id=1255697837971214476&redirect_uri=${encodeURIComponent(REDIRECT)}&response_type=token&scope=identify`;
         }
 
-        async function confirmarEnvio() {
-            const idDestino = document.getElementById('id-selecionado').value;
-            const valor = parseInt(document.getElementById('valor-input').value);
+        async function init() {
+            let token = localStorage.getItem('token_discord');
+            if(window.location.hash) {
+                token = new URLSearchParams(window.location.hash.replace('#','?')).get('access_token');
+                localStorage.setItem('token_discord', token);
+                window.history.replaceState({}, "", window.location.pathname);
+            }
 
-            if (!idDestino || isNaN(valor) || valor <= 0) return alert("Selecione um jogador válido!");
+            if(!token) {
+                document.getElementById('tela-login').classList.remove('hidden');
+                return;
+            }
 
-            const { data: user } = await supabaseClient.from('usuarios').select('saldo').eq('id_discord', idDestino).single();
-            const novoSaldo = (user?.saldo || 0) + valor;
+            const res = await fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${token}` } });
+            const discordUser = await res.json();
 
-            await supabaseClient.from('usuarios').update({ saldo: novoSaldo }).eq('id_discord', idDestino);
-            await supabaseClient.from('historico').insert([{ 
-                usuario_id: idDestino, tipo: 'entrada', descricao: 'ENVIO ADMINISTRATIVO', valor_total: valor, data: new Date() 
-            }]);
+            if(discordUser.id) {
+                const foto = `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`;
+                
+                // SALVA/ATUALIZA NO BANCO (Isso faz ele aparecer na sua busca ADM)
+                const { data: db } = await supabaseClient.from('usuarios').upsert({ 
+                    id_discord: discordUser.id, 
+                    username: discordUser.username, 
+                    avatar_url: foto 
+                }).select().single();
 
-            alert("✅ Transferência realizada!");
-            location.reload();
+                document.getElementById('tela-app').classList.remove('hidden');
+                document.getElementById('user-name').innerText = discordUser.username;
+                document.getElementById('user-pic').src = foto;
+                document.getElementById('user-saldo').innerText = `R$ ${db.saldo.toLocaleString('pt-BR')}`;
+
+                // Verifica se é ADM
+                const { data: adm } = await supabaseClient.from('admins').select('*').eq('id_discord', discordUser.id).single();
+                if(adm) document.getElementById('btn-adm-container').classList.remove('hidden');
+
+                // Carrega Histórico
+                const { data: logs } = await supabaseClient.from('historico').select('*').eq('usuario_id', discordUser.id).order('data', {ascending: false});
+                document.getElementById('lista-logs').innerHTML = logs.map(l => `
+                    <tr class="border-b border-zinc-900/50">
+                        <td class="py-4 text-zinc-500 italic text-xs">${new Date(l.data).toLocaleDateString()}</td>
+                        <td class="py-4 text-emerald-500 font-black italic uppercase">R$ ${l.valor_total.toLocaleString('pt-BR')}</td>
+                        <td class="py-4 text-right text-zinc-400 font-bold uppercase italic">${l.descricao}</td>
+                    </tr>
+                `).join('');
+            }
         }
+        init();
     </script>
 </body>
 </html>
