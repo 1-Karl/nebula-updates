@@ -11,8 +11,6 @@
         body { background-color: #0b0e11; color: #f0f0f0; font-family: 'Inter', sans-serif; }
         .card-bg { background-color: #151921; border: 1px solid #1e2329; }
         .btn-discord { background-color: #5865F2; transition: 0.3s; }
-        .btn-enviar { background-color: #008f44; color: white; transition: 0.2s; }
-        .btn-enviar:hover { background-color: #00a34d; }
         .banner-perfil { background: linear-gradient(to bottom, #1e3a8a, #0b0e11); height: 180px; border-bottom: 1px solid #1e2329; }
         .hidden { display: none !important; }
         .badge-player { background-color: #1e2329; color: #7289da; border: 1px solid #2d333b; }
@@ -24,7 +22,7 @@
     <div id="tela-login" class="flex items-center justify-center h-screen hidden">
         <div class="card-bg p-10 rounded-2xl text-center shadow-2xl max-w-sm border-t-4 border-[#5865F2]">
             <h1 class="text-2xl font-bold mb-6">Nebula Economy</h1>
-            <button onclick="fazerLogin()" class="btn-discord w-full py-4 rounded-lg font-bold flex items-center justify-center gap-3 shadow-lg">
+            <button onclick="fazerLogin()" class="btn-discord w-full py-4 rounded-lg font-bold flex items-center justify-center gap-3">
                 <i class="fa-brands fa-discord text-xl"></i> VINCULAR DISCORD
             </button>
         </div>
@@ -37,18 +35,16 @@
                     <img id="user-avatar" src="" class="w-32 h-32 rounded-full border-4 border-[#0b0e11] shadow-2xl bg-[#151921]">
                     <div class="pb-4">
                         <div class="flex items-center gap-3">
-                            <h1 id="user-name" class="text-3xl font-black italic text-white tracking-tighter">CARREGANDO...</h1>
+                            <h1 id="user-name" class="text-3xl font-black italic text-white uppercase">Carregando...</h1>
                             <span class="badge-player px-2 py-0.5 rounded text-[10px] font-bold uppercase">Player</span>
                         </div>
                         <div class="flex items-center gap-2 mt-1">
-                            <span class="badge-guilda px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 uppercase">
-                                <i class="fa-solid fa-shield-halved text-[8px]"></i> Membro da Guilda
-                            </span>
+                            <span class="badge-guilda px-2 py-0.5 rounded text-[10px] font-bold uppercase italic">Membro da Guilda</span>
                         </div>
                     </div>
                 </div>
                 <div id="area-adm-btn" class="absolute -bottom-8 right-8 hidden">
-                    <button onclick="irParaAdm()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 px-6 py-2 rounded-lg font-bold text-sm border border-zinc-700 flex items-center gap-2">
+                    <button onclick="window.location.href='admin.html'" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 px-6 py-2 rounded-lg font-bold text-sm border border-zinc-700 flex items-center gap-2">
                         <i class="fa-solid fa-user-shield text-emerald-500"></i> PAINEL ADM
                     </button>
                 </div>
@@ -64,9 +60,7 @@
 
             <div class="card-bg rounded-xl p-8 shadow-2xl mb-10">
                 <div class="flex justify-between items-center mb-10">
-                    <h3 class="text-xl font-bold italic flex items-center gap-3 uppercase tracking-tighter">
-                        <i class="fa-solid fa-circle-info text-zinc-600"></i> Histórico Financeiro
-                    </h3>
+                    <h3 class="text-xl font-bold italic uppercase tracking-tighter text-zinc-400">Histórico Financeiro</h3>
                     <div class="text-right">
                         <p class="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">Saldo Atual</p>
                         <h2 id="user-saldo" class="text-4xl font-black text-white italic">R$ 0</h2>
@@ -83,8 +77,7 @@
                                 <th class="pb-4 px-4 text-right">Valor Prata</th>
                             </tr>
                         </thead>
-                        <tbody id="tabela-logs" class="text-sm">
-                            </tbody>
+                        <tbody id="tabela-logs" class="text-sm"></tbody>
                     </table>
                 </div>
             </div>
@@ -95,7 +88,6 @@
         const CLIENT_ID = '1255697837971214476';
         const SB_URL = 'https://mrzlwrlufgqbsapsidjy.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yemx3cmx1ZmdxYnNhcHNpZGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDc5MzMsImV4cCI6MjA5MDYyMzkzM30.6vH3KfWU1XJqRrCi6e___LNt-t1nZzQpfe6EumzvkmI';
-        // USE O LINK EXATO DO GITHUB ABAIXO:
         const REDIRECT_URI = 'https://1-karl.github.io/nebula-updates/index.html';
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
@@ -103,47 +95,55 @@
             window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
         }
 
-        function irParaAdm() {
-            window.location.href = 'admin.html' + window.location.hash;
+        async function registrarNoBanco(user) {
+            const avatar = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+            const { data } = await supabaseClient.from('usuarios').select('*').eq('id_discord', user.id).single();
+            if (!data) {
+                await supabaseClient.from('usuarios').insert([{ id_discord: user.id, username: user.username, avatar_url: avatar, saldo: 0 }]);
+            } else {
+                await supabaseClient.from('usuarios').update({ username: user.username, avatar_url: avatar }).eq('id_discord', user.id);
+            }
         }
 
         async function inicializar() {
-            const hash = window.location.hash;
-            if (hash.includes('access_token')) {
-                document.getElementById('tela-painel').classList.remove('hidden');
-                const params = new URLSearchParams(hash.replace('#', '?'));
-                const token = params.get('access_token');
-                
-                const userReq = await fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${token}` } });
-                const userData = await userReq.json();
-                
-                // Preencher Perfil
-                document.getElementById('user-name').innerText = userData.username.toUpperCase();
-                document.getElementById('user-avatar').src = `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`;
+            let token = localStorage.getItem('discord_token');
+            if (window.location.hash.includes('access_token')) {
+                token = new URLSearchParams(window.location.hash.replace('#', '?')).get('access_token');
+                localStorage.setItem('discord_token', token);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
 
-                // Carregar Saldo
-                const { data: userDb } = await supabaseClient.from('usuarios').select('saldo').eq('id_discord', userData.id).single();
-                if (userDb) document.getElementById('user-saldo').innerText = `R$ ${userDb.saldo.toLocaleString('pt-BR')}`;
+            if (token) {
+                const res = await fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${token}` } });
+                if (res.ok) {
+                    const user = await res.json();
+                    await registrarNoBanco(user);
+                    document.getElementById('tela-painel').classList.remove('hidden');
+                    document.getElementById('user-name').innerText = user.username.toUpperCase();
+                    document.getElementById('user-avatar').src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+                    
+                    const { data: dbUser } = await supabaseClient.from('usuarios').select('saldo').eq('id_discord', user.id).single();
+                    if (dbUser) document.getElementById('user-saldo').innerText = `R$ ${dbUser.saldo.toLocaleString('pt-BR')}`;
 
-                // Carregar Logs
-                const { data: logs } = await supabaseClient.from('historico').select('*').eq('usuario_id', userData.id).order('data', { ascending: false });
-                document.getElementById('tabela-logs').innerHTML = logs?.map(log => `
-                    <tr class="border-b border-zinc-900/50 hover:bg-zinc-800/30 transition">
-                        <td class="p-4 text-zinc-500 text-[11px] italic font-medium">${new Date(log.data).toLocaleDateString()}</td>
-                        <td class="p-4"><span class="bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter">↗ Entrada</span></td>
-                        <td class="p-4 text-zinc-300 font-bold text-center italic">${log.descricao}</td>
-                        <td class="p-4 text-right text-emerald-500 font-black text-lg italic">R$ ${log.valor_total.toLocaleString('pt-BR')}</td>
-                    </tr>`).join('') || '<tr><td colspan="4" class="p-10 text-center text-zinc-600 italic">Nenhum registro encontrado.</td></tr>';
+                    const { data: logs } = await supabaseClient.from('historico').select('*').eq('usuario_id', user.id).order('data', { ascending: false });
+                    document.getElementById('tabela-logs').innerHTML = logs?.map(log => `
+                        <tr class="border-b border-zinc-900/50 hover:bg-zinc-800/30 transition">
+                            <td class="p-4 text-zinc-500 text-[11px] italic font-medium">${new Date(log.data).toLocaleDateString()}</td>
+                            <td class="p-4"><span class="bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter">↗ Entrada</span></td>
+                            <td class="p-4 text-zinc-300 font-bold text-center italic">${log.descricao}</td>
+                            <td class="p-4 text-right text-emerald-500 font-black text-lg italic">R$ ${log.valor_total.toLocaleString('pt-BR')}</td>
+                        </tr>`).join('') || '<tr><td colspan="4" class="p-10 text-center text-zinc-600 italic">Nenhum registro.</td></tr>';
 
-                // Verificar se é ADM para mostrar botão
-                const { data: isAdm } = await supabaseClient.from('admins').select('*').eq('id_discord', userData.id).single();
-                if (isAdm) document.getElementById('area-adm-btn').classList.remove('hidden');
-
+                    const { data: isAdm } = await supabaseClient.from('admins').select('*').eq('id_discord', user.id).single();
+                    if (isAdm) document.getElementById('area-adm-btn').classList.remove('hidden');
+                } else {
+                    localStorage.removeItem('discord_token');
+                    document.getElementById('tela-login').classList.remove('hidden');
+                }
             } else {
                 document.getElementById('tela-login').classList.remove('hidden');
             }
         }
-
         window.onload = inicializar;
     </script>
 </body>
