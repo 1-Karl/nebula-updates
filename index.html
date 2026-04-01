@@ -2,59 +2,65 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Nebula Economy | Guilda</title>
+    <title>Nebula | Sistema de Economia</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background-color: #0b0e11; color: #f0f0f0; font-family: 'Inter', sans-serif; }
         .card-bg { background-color: #151921; border: 1px solid #1e2329; border-radius: 12px; }
-        .banner { background: linear-gradient(90deg, #0f172a 0%, #1e3a8a 100%); height: 200px; border-bottom: 1px solid #1e2329; }
-        .avatar-img { width: 130px; height: 130px; border: 4px solid #0b0e11; border-radius: 50%; position: absolute; bottom: -65px; left: 30px; }
+        .banner-gradient { background: linear-gradient(90deg, #0f172a 0%, #1e3a8a 50%, #000 100%); height: 220px; border-bottom: 1px solid #1e2329; }
+        .avatar-frame { width: 150px; height: 150px; border: 5px solid #0b0e11; position: absolute; bottom: -75px; left: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .badge-status { background: #1e2329; border: 1px solid #2d333b; color: #5865F2; padding: 2px 10px; font-size: 11px; font-weight: 900; text-transform: uppercase; border-radius: 4px; }
         .hidden { display: none !important; }
-        .badge-azul { background: #1e2329; color: #5865F2; border: 1px solid #2d333b; padding: 2px 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-    <div id="tela-login" class="flex items-center justify-center h-screen hidden">
-        <div class="card-bg p-10 text-center border-t-4 border-[#5865F2] shadow-2xl">
-            <h1 class="text-3xl font-black italic mb-6 tracking-tighter">NEBULA ECONOMY</h1>
-            <button onclick="loginDiscord()" class="bg-[#5865F2] px-8 py-4 rounded-lg font-bold flex items-center gap-3 hover:scale-105 transition">
-                <i class="fa-brands fa-discord text-xl"></i> VINCULAR CONTA DISCORD
+    <div id="login-container" class="flex items-center justify-center h-screen hidden">
+        <div class="card-bg p-12 text-center border-t-4 border-[#5865F2] shadow-2xl">
+            <h1 class="text-3xl font-black italic mb-8 tracking-tighter">NEBULA ECONOMY</h1>
+            <button onclick="login()" class="bg-[#5865F2] px-10 py-4 rounded-lg font-black flex items-center gap-3 hover:scale-105 transition">
+                <i class="fa-brands fa-discord text-xl"></i> VINCULAR DISCORD
             </button>
         </div>
     </div>
 
-    <div id="tela-app" class="hidden">
-        <div class="banner relative">
+    <div id="main-app" class="hidden">
+        <div class="banner-gradient relative">
             <div class="max-w-6xl mx-auto h-full relative">
-                <img id="user-pic" src="" class="avatar-img bg-[#151921]">
-                <div id="btn-adm-container" class="absolute bottom-4 right-4 hidden">
-                    <a href="admin.html" class="bg-zinc-800 border border-zinc-700 px-4 py-2 rounded text-xs font-bold text-zinc-400">PAINEL ADM</a>
+                <img id="u-avatar" src="" class="avatar-frame rounded-full bg-[#151921]">
+                <div id="admin-tag" class="absolute bottom-6 right-8 hidden">
+                    <a href="admin.html" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 px-6 py-2 rounded-lg font-black text-xs border border-zinc-700 flex items-center gap-2">
+                        <i class="fa-solid fa-user-shield text-emerald-500"></i> PAINEL ADM
+                    </a>
                 </div>
             </div>
         </div>
 
-        <div class="max-w-6xl mx-auto mt-20 px-8">
-            <div class="mb-10">
-                <div class="flex items-center gap-3">
-                    <h1 id="user-name" class="text-4xl font-black italic uppercase text-white tracking-tighter">Carregando...</h1>
-                    <span class="badge-azul">Membro</span>
+        <div class="max-w-6xl mx-auto mt-24 px-10">
+            <div class="mb-12">
+                <div class="flex items-center gap-4">
+                    <h1 id="u-name" class="text-5xl font-black italic uppercase text-white tracking-tighter">CARREGANDO...</h1>
+                    <span class="badge-status">Membro da Guilda</span>
                 </div>
-                <p class="text-emerald-500 font-bold italic text-sm mt-1">Status: Ativo na Guilda</p>
+                <p class="text-emerald-500 font-bold italic text-sm mt-2 uppercase tracking-widest">Status: Integrante Ativo</p>
             </div>
 
-            <div class="card-bg p-8">
-                <div class="flex justify-between items-center border-b border-zinc-800 pb-6 mb-6">
-                    <h3 class="text-zinc-500 font-bold uppercase text-xs tracking-widest italic">Histórico de Transações</h3>
+            <div class="card-bg p-10 shadow-2xl">
+                <div class="flex justify-between items-center border-b border-zinc-800 pb-8 mb-8">
+                    <h3 class="text-zinc-500 font-black uppercase text-xs tracking-widest italic flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Histórico de Pratas
+                    </h3>
                     <div class="text-right">
-                        <span class="text-[10px] font-black text-zinc-500 uppercase">Saldo Total</span>
-                        <h2 id="user-saldo" class="text-5xl font-black italic text-white">R$ 0</h2>
+                        <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Patrimônio Atual</span>
+                        <h2 id="u-saldo" class="text-6xl font-black italic text-white tracking-tighter">R$ 0</h2>
                     </div>
                 </div>
-                <table class="w-full text-left">
-                    <tbody id="lista-logs"></tbody>
+
+                <table class="w-full">
+                    <tbody id="u-logs">
+                        </tbody>
                 </table>
             </div>
         </div>
@@ -65,58 +71,53 @@
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yemx3cmx1ZmdxYnNhcHNpZGp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDc5MzMsImV4cCI6MjA5MDYyMzkzM30.6vH3KfWU1XJqRrCi6e___LNt-t1nZzQpfe6EumzvkmI';
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-        function loginDiscord() {
-            const REDIRECT = 'https://1-karl.github.io/nebula-updates/index.html';
-            window.location.href = `https://discord.com/api/oauth2/authorize?client_id=1255697837971214476&redirect_uri=${encodeURIComponent(REDIRECT)}&response_type=token&scope=identify`;
+        function login() {
+            const URI = 'https://1-karl.github.io/nebula-updates/index.html';
+            window.location.href = `https://discord.com/api/oauth2/authorize?client_id=1255697837971214476&redirect_uri=${encodeURIComponent(URI)}&response_type=token&scope=identify`;
         }
 
-        async function init() {
-            let token = localStorage.getItem('token_discord');
+        async function start() {
+            let token = localStorage.getItem('access_token');
             if(window.location.hash) {
                 token = new URLSearchParams(window.location.hash.replace('#','?')).get('access_token');
-                localStorage.setItem('token_discord', token);
+                localStorage.setItem('access_token', token);
                 window.history.replaceState({}, "", window.location.pathname);
             }
 
-            if(!token) {
-                document.getElementById('tela-login').classList.remove('hidden');
-                return;
-            }
+            if(!token) return document.getElementById('login-container').classList.remove('hidden');
 
             const res = await fetch('https://discord.com/api/users/@me', { headers: { Authorization: `Bearer ${token}` } });
-            const discordUser = await res.json();
+            const user = await res.json();
 
-            if(discordUser.id) {
-                const foto = `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`;
+            if(user.id) {
+                const avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
                 
-                // SALVA/ATUALIZA NO BANCO (Isso faz ele aparecer na sua busca ADM)
+                // Sincroniza com Supabase
                 const { data: db } = await supabaseClient.from('usuarios').upsert({ 
-                    id_discord: discordUser.id, 
-                    username: discordUser.username, 
-                    avatar_url: foto 
+                    id_discord: user.id, username: user.username, avatar_url: avatarUrl 
                 }).select().single();
 
-                document.getElementById('tela-app').classList.remove('hidden');
-                document.getElementById('user-name').innerText = discordUser.username;
-                document.getElementById('user-pic').src = foto;
-                document.getElementById('user-saldo').innerText = `R$ ${db.saldo.toLocaleString('pt-BR')}`;
+                document.getElementById('main-app').classList.remove('hidden');
+                document.getElementById('u-name').innerText = user.username;
+                document.getElementById('u-avatar').src = avatarUrl;
+                document.getElementById('u-saldo').innerText = `R$ ${db.saldo.toLocaleString('pt-BR')}`;
 
-                // Verifica se é ADM
-                const { data: adm } = await supabaseClient.from('admins').select('*').eq('id_discord', discordUser.id).single();
-                if(adm) document.getElementById('btn-adm-container').classList.remove('hidden');
+                // VERIFICA SE É ADM (Isso libera o botão)
+                const { data: adm } = await supabaseClient.from('admins').select('*').eq('id_discord', user.id).single();
+                if(adm) document.getElementById('admin-tag').classList.remove('hidden');
 
                 // Carrega Histórico
-                const { data: logs } = await supabaseClient.from('historico').select('*').eq('usuario_id', discordUser.id).order('data', {ascending: false});
-                document.getElementById('lista-logs').innerHTML = logs.map(l => `
-                    <tr class="border-b border-zinc-900/50">
-                        <td class="py-4 text-zinc-500 italic text-xs">${new Date(l.data).toLocaleDateString()}</td>
+                const { data: logs } = await supabaseClient.from('historico').select('*').eq('usuario_id', user.id).order('data', {ascending: false});
+                document.getElementById('u-logs').innerHTML = logs.map(l => `
+                    <tr class="border-b border-zinc-900/50 hover:bg-zinc-800/30 transition">
+                        <td class="py-4 text-zinc-600 italic font-bold text-xs">${new Date(l.data).toLocaleDateString()}</td>
                         <td class="py-4 text-emerald-500 font-black italic uppercase">R$ ${l.valor_total.toLocaleString('pt-BR')}</td>
-                        <td class="py-4 text-right text-zinc-400 font-bold uppercase italic">${l.descricao}</td>
+                        <td class="py-4 text-right text-zinc-400 font-black italic uppercase text-xs">${l.descricao}</td>
                     </tr>
                 `).join('');
             }
         }
-        init();
+        start();
     </script>
 </body>
 </html>
